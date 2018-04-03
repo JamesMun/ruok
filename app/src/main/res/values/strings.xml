@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">RUOK</string>
+    <string name="server_clinet_id">508790349548-6ss9q2m085fjvs8i417ujrudum7udecn.apps.googleusercontent.com</string>
+    <string name="signed_in_fmt">%s 로 로그인</string>
+    <string name="signed_in">로그인</string>
+    <string name="signing_in">로그인 중…</string>
+    <string name="signed_out">로그아웃</string>
+    <string name="signed_in_err">"Error: please check logs."</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
