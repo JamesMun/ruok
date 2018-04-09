@@ -1,7 +1,13 @@
 package com.example.mun.ruok;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
+import android.location.LocationManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.os.Bundle;
@@ -22,10 +28,16 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import static android.location.LocationManager.GPS_PROVIDER;
+
+import com.example.mun.ruok.GpsInfo;
 
 /**
  * Created by KJH on 2017-05-15.
@@ -67,7 +79,10 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     private GoogleApiClient mGoogleApiClient;
     private static final int FASTEST_UPDATE_INTERVAL_MS = 15000;
 
-    private GoogleMap googleMap;
+    public static Double lat = 32.882499;
+    public static Double lon = -117.234644;
+
+    private GoogleMap map;
     private MapView mapView = null;
 
     public static Fragment_TabMain TabMainContext;
@@ -113,9 +128,6 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
         if (mapView != null) {
             mapView.onCreate(savedInstanceState);
-        }
-        else {
-
         }
     }
 
@@ -166,18 +178,92 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     }
 
     @Override
-    public void onMapReady(final GoogleMap map) {
+    public void onMapReady(GoogleMap googleMap) {
+        map = googleMap;
 
-        LatLng SEOUL = new LatLng(37.56, 126.97);
+        //BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.aqicloud1);
+        ShowMyLocaion(lat,lon,map);
+        StartLocationService();
+    }
 
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(SEOUL);
-        markerOptions.title("서울");
-        markerOptions.snippet("한국의 수도");
-        map.addMarker(markerOptions);
+    private void StartLocationService() {
+        LocationManager manager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        GPSListener gpsListener = new GPSListener();
+        long minTime = 3000;
+        float minDistance = 0;
+        try {   //GPS 위치 요청
+            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            manager.requestLocationUpdates(GPS_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
 
-        map.moveCamera(CameraUpdateFactory.newLatLng(SEOUL));
-        map.animateCamera(CameraUpdateFactory.zoomTo(10));
+            // location request with network
+            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
 
+            Location lastLocation = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+            if (lastLocation != null) {
+                Double latitude = lastLocation.getLatitude();
+                Double longitude = lastLocation.getLongitude();
+
+            }
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private class GPSListener implements android.location.LocationListener {
+        @Override
+        public void onLocationChanged(Location location) {
+            lat = location.getLatitude();
+            lon = location.getLongitude();
+            String msg = "Lat:" + lat + " / Lon:" + lon;
+            ShowMyLocaion(lat, lon, map);
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+            ShowMyLocaion(lat, lon, map);
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+        }
+    }
+
+    private void ShowMyLocaion(Double lat, Double lon, GoogleMap googleMap) {
+        try {
+            LatLng nowLocation = new LatLng(lat, lon);
+            MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(nowLocation);
+            markerOptions.title("now location");
+
+            //BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(getResources().getIdentifier(cloudimage,"drawable","com.example.khseob0715.sanfirst"));
+
+            //markerOptions.icon(icon);
+
+            googleMap.clear();
+
+            // Get back the mutable Circle
+            //googleMap.addCircle(circleOptions);
+
+            googleMap.addMarker(markerOptions);
+            googleMap.moveCamera(CameraUpdateFactory.newLatLng(nowLocation));
+            googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+
+        }   catch (IllegalStateException e)   {
+        }
     }
 }

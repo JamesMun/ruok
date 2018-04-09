@@ -8,7 +8,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+
 public class MainActivity extends AppCompatActivity {
+
+    public static int RENEW_GPS = 1;
+    public static int SEND_PRINT = 2;
 
     private Fragment tabFragment;
     private Fragment settingFragment;
@@ -21,6 +25,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bottom);
+
+        tabMake();
+        getUserInfo();
+
+        UserActContext = this;
+    }
+
+    private void getUserInfo() {
+        Intent intent = getIntent();
+        account = intent.getExtras().getString("account");    // 로그인 결과로 넘어온 유저 계정
+        Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
+
+    }
+
+    private void tabMake() {
 
         tabFragment = new Fragment_TabMain();
         settingFragment = new SettingFragment();
@@ -70,17 +89,5 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
-        getUserInfo();
-
-        UserActContext = this;
-    }
-
-
-    private void getUserInfo() {
-        Intent intent = getIntent();
-        account = intent.getExtras().getString("account");    // 로그인 결과로 넘어온 유저 계정
-        Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
-
     }
 }
