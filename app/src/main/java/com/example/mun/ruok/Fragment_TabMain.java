@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
@@ -18,6 +19,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -82,10 +84,19 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     public static Double lat = 32.882499;
     public static Double lon = -117.234644;
 
+    private int heart_start = 0;
+    public static int heart_rate_value = 0, rr_rate_value = 0;
+
+    private BluetoothAdapter mBluetoothAdapter = null; /* Intent request codes*/
+
+    private TextView HeartRateText;
+
     private GoogleMap map;
     private MapView mapView = null;
 
     public static Fragment_TabMain TabMainContext;
+
+    private Thread heartThread;
 
     public Fragment_TabMain() {
     }
@@ -115,6 +126,8 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
         //setHasOptionsMenu(true);
 
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         TabMainContext = this;
 
         return rootView;
@@ -123,8 +136,12 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
 
+        HeartRateText = (TextView) view.findViewById(R.id.HeartDataValue);
+
         mapView = (MapView) view.findViewById(R.id.mapView);
         mapView.getMapAsync(this);
+
+        startSubThread();
 
         if (mapView != null) {
             mapView.onCreate(savedInstanceState);
@@ -264,6 +281,37 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
             googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
 
         }   catch (IllegalStateException e)   {
+        }
+    }
+
+    public void startSubThread() {
+        //작업스레드 생성(매듭 묶는과정)
+        heartHandler heartRunnable = new heartHandler();
+        heartThread = new Thread(heartRunnable);
+        heartThread.setDaemon(true);
+        heartThread.start();
+    }
+
+    android.os.Handler receivehearthandler = new android.os.Handler() {
+        public void handleMessage(Message msg) {
+            heart_start = heart_rate_value;
+
+            HeartRateText.setText(String.valueOf(heart_rate_value));
+        }
+    };
+
+    public class heartHandler implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                Message msg = Message.obtain();
+                msg.what = 0;
+                receivehearthandler.sendMessage(msg);
+                try {
+                    Thread.sleep(1000); // 갱신주기 1초
+                } catch (Exception e) {
+                }
+            }
         }
     }
 }

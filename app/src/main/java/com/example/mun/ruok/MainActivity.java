@@ -10,10 +10,7 @@ import android.widget.Toast;
 
 
 public class MainActivity extends AppCompatActivity {
-
-    public static int RENEW_GPS = 1;
-    public static int SEND_PRINT = 2;
-
+    
     private Fragment tabFragment;
     private Fragment settingFragment;
 
@@ -50,10 +47,14 @@ public class MainActivity extends AppCompatActivity {
         ft.commit();
 
         TabLayout tabs = (TabLayout) findViewById(R.id.tabs);
-        tabs.addTab(tabs.newTab().setText("Home"));
+        /*tabs.addTab(tabs.newTab().setText("Home"));
         tabs.addTab(tabs.newTab().setText("History"));
         tabs.addTab(tabs.newTab().setText("Alarm"));
-        tabs.addTab(tabs.newTab().setText("Settings"));
+        tabs.addTab(tabs.newTab().setText("Settings"));*/
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.home));
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.history));
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.alarm));
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.setting));
         tabs.setTabGravity(TabLayout.GRAVITY_FILL);
 
         tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {

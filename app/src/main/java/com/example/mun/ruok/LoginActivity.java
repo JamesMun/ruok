@@ -48,14 +48,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     //초기화 함수
     protected void init() {
 
-        // Views
-        mStatusTextView = findViewById(R.id.status);
-
         // Button listeners
         findViewById(R.id.sign_in_button).setOnClickListener(this);
-        findViewById(R.id.sign_out_button).setOnClickListener(this);
-        findViewById(R.id.disconnect_button).setOnClickListener(this);
-        findViewById(R.id.profile).setOnClickListener(this);
 
 
         // Configure sign-in to request the user's ID, email address, and basic
@@ -129,7 +123,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
             Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
-            updateUI(null);
         }
     }
     // [END handleSignInResult]
@@ -141,33 +134,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
     // [END signIn]
 
-    // [START signOut]
-    private void signOut() {
-        mGoogleSignInClient.signOut()
-                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        // [START_EXCLUDE]
-                        updateUI(null);
-                        // [END_EXCLUDE]
-                    }
-                });
-    }
-    // [END signOut]
-
     // [START revokeAccess]
-    private void revokeAccess() {
-        mGoogleSignInClient.revokeAccess()
-                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        // [START_EXCLUDE]
-                        updateUI(null);
-                        // [END_EXCLUDE]
-                    }
-                });
-    }
-    // [END revokeAccess]
 
     //로그인 된 사용자의 개인정보 확인.
     //메일, 이름, 나이, 성별 확인 필요.
@@ -181,35 +148,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     }
 
-    private void updateUI(@Nullable GoogleSignInAccount account) {
-        if (account != null) {
-            mStatusTextView.setText(getString(R.string.signed_in_fmt, account.getDisplayName()));
-
-            findViewById(R.id.sign_in_button).setVisibility(View.GONE);
-            findViewById(R.id.sign_out_and_disconnect).setVisibility(View.VISIBLE);
-        } else {
-            mStatusTextView.setText(R.string.signed_out);
-
-            findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
-            findViewById(R.id.sign_out_and_disconnect).setVisibility(View.GONE);
-        }
-    }
-
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.sign_in_button:
                 signIn();
-                break;
-            case R.id.sign_out_button:
-                signOut();
-                break;
-            case R.id.disconnect_button:
-                revokeAccess();
-                break;
-            case R.id.profile:
-                profile();
                 break;
         }
     }
