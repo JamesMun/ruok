@@ -1,5 +1,6 @@
 package com.example.mun.ruok;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -10,11 +11,14 @@ import android.widget.Toast;
 
 
 public class MainActivity extends AppCompatActivity {
-    
+
+    private static final String TAG = "Main";
     private Fragment tabFragment;
     private Fragment settingFragment;
 
     public static MainActivity UserActContext;
+
+    public static Activity UserActivity;
 
     public static String account;
 
@@ -26,7 +30,17 @@ public class MainActivity extends AppCompatActivity {
         tabMake();
         getUserInfo();
 
+        Intent intent = new Intent(this,SensorService.class);
+        startService(intent);
+
         UserActContext = this;
+        UserActivity = this;
+    }
+
+    public void stopSV() {
+
+        Intent intent = new Intent(this, SensorService.class);
+        stopService(intent);
     }
 
     private void getUserInfo() {
@@ -51,10 +65,10 @@ public class MainActivity extends AppCompatActivity {
         tabs.addTab(tabs.newTab().setText("History"));
         tabs.addTab(tabs.newTab().setText("Alarm"));
         tabs.addTab(tabs.newTab().setText("Settings"));*/
-        tabs.addTab(tabs.newTab().setIcon(R.drawable.home));
-        tabs.addTab(tabs.newTab().setIcon(R.drawable.history));
-        tabs.addTab(tabs.newTab().setIcon(R.drawable.alarm));
-        tabs.addTab(tabs.newTab().setIcon(R.drawable.setting));
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_home));
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_history));
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_alarm));
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_setting));
         tabs.setTabGravity(TabLayout.GRAVITY_FILL);
 
         tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {

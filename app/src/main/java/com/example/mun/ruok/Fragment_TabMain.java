@@ -78,7 +78,6 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     private ViewGroup rootView;
 
-    private GoogleApiClient mGoogleApiClient;
     private static final int FASTEST_UPDATE_INTERVAL_MS = 15000;
 
     public static Double lat = 32.882499;
@@ -125,8 +124,6 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         host.addTab(spec);
 
         //setHasOptionsMenu(true);
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         TabMainContext = this;
 
