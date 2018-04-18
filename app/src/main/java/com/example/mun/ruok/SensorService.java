@@ -44,7 +44,6 @@ public class SensorService extends Service {
     private boolean authInProgress = false;
 
     private int hr = 0;
-    private int heart_count = 0;
 
     private int max_heart_rate = 80;
     private int min_heart_rate = 60;
@@ -55,6 +54,7 @@ public class SensorService extends Service {
     private OnDataPointListener mListener;
     // [END mListener_variable_reference]
 
+    public static int heart_count = 0;
     public static Thread heartThread;
 
     public boolean fit_mode = false;
@@ -219,6 +219,7 @@ public class SensorService extends Service {
                     Fragment_TabMain.heart_rate_value = heartrate.intValue();
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
+                    Log.i(TAG, "alert: " + alert);
 
                     //myTextView.append(val + " " + field.getName() + "\r\n");
 
@@ -292,7 +293,6 @@ public class SensorService extends Service {
                 if(hr > max_heart_rate || hr < min_heart_rate) {
                     heart_count++;
                     if(heart_count > 5  && alert != true) {
-                        heart_count = 0;
                         //heartThread.interrupt();
                         alert = true;
                         Intent intent = new Intent(getApplicationContext(),AlertActivity.class);

@@ -42,5 +42,6 @@ public class AlertActivity extends AppCompatActivity{
         super.onDestroy();
         vib.cancel();
         SensorService.alert = false;
+        SensorService.heart_count = 0;
     }
 }
