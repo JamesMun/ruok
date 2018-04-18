@@ -22,6 +22,13 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
@@ -86,6 +93,8 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     private int heart_start = 0;
     public static int heart_rate_value = 0, rr_rate_value = 0;
 
+    private LineChart mChart;
+
     private BluetoothAdapter mBluetoothAdapter = null; /* Intent request codes*/
 
     private TextView HeartRateText;
@@ -95,7 +104,9 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     public static Fragment_TabMain TabMainContext;
 
-    private Thread heartThread;
+    private Thread heartThread, thread;
+
+    MainActivity mainclass = new MainActivity();
 
     public Fragment_TabMain() {
     }
@@ -134,6 +145,14 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
 
         HeartRateText = (TextView) view.findViewById(R.id.HeartDataValue);
+        mChart = (LineChart) view.findViewById(R.id.chart);
+
+        chart_setting();
+
+        LineData data = new LineData();
+        mChart.setData(data); // LineData를 셋팅함
+
+        feedMultiple();
 
         mapView = (MapView) view.findViewById(R.id.mapView);
         mapView.getMapAsync(this);
@@ -310,5 +329,82 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
                 }
             }
         }
+    }
+
+    private void chart_setting() {
+        // 차트의 아래 Axis
+        XAxis xAxis = mChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM); // xAxis의 위치는 아래쪽
+        // xAxis.setTextSize(10f); // xAxis에 표출되는 텍스트의 크기는 10f
+        xAxis.setDrawGridLines(false); // xAxis의 그리드 라인을 없앰
+
+        // 차트의 왼쪽 Axis
+        YAxis leftAxis = mChart.getAxisLeft();
+        leftAxis.setDrawGridLines(false); // leftAxis의 그리드 라인을 없앰
+
+        // 차트의 오른쪽 Axis
+        YAxis rightAxis = mChart.getAxisRight();
+        rightAxis.setEnabled(false); // rightAxis를 비활성화 함
+    }
+
+    private void feedMultiple() {
+        if (thread != null)
+            thread.interrupt(); // 살아있는 쓰레드에 인터럽트를 검
+
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                addEntry(); // addEntry를 실행하게 함
+            }
+        };
+
+        thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    mainclass.runOnUiThread(runnable); // UI 쓰레드에서 위에서 생성한 runnable를 실행함
+                    try {
+                        Thread.sleep(500); // 0.5초간 쉼
+                    } catch (InterruptedException ie) {
+                        ie.printStackTrace();
+                    }
+                }
+            }
+        });
+        thread.start();
+    }
+
+    private void addEntry() {
+        LineData data = mChart.getData();
+
+        LineDataSet set1 = (LineDataSet) data.getDataSetByIndex(0);
+
+        if (set1 == null) {
+            // creation of null
+            set1 = createSet(Color.parseColor("#FFFF7A87"), "Heart-Rate");
+            data.addDataSet(set1);
+        }
+
+        data.addEntry(new Entry(set1.getEntryCount(), heart_rate_value), 0);
+
+        data.notifyDataChanged();                                      // data의 값 변동을 감지함
+
+        mChart.notifyDataSetChanged();                                // chart의 값 변동을 감지함
+        mChart.setVisibleXRangeMaximum(10);                           // chart에서 최대 X좌표기준으로 몇개의 데이터를 보여줄지 설정함
+        mChart.moveViewToX(data.getEntryCount());                     // 가장 최근에 추가한 데이터의 위치로 chart를 이동함
+    }
+
+    private LineDataSet createSet(int setColor, String dataName) {
+        LineDataSet set = new LineDataSet(null, dataName);            // 데이터셋의 이름을 "Dynamic Data"로 설정(기본 데이터는 null)
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);              // Axis를 YAxis의 LEFT를 기본으로 설정
+        set.setColor(setColor);                                        // 데이터의 라인색을 HoloBlue로 설정
+        set.setCircleColor(setColor);                                  // 데이터의 점을 WHITE로 설정 // 65536
+        set.setLineWidth(2f);                                          // 라인의 두께를 2f로 설정
+        set.setCircleRadius(4f);                                       // 데이터 점의 반지름을 4f로 설정
+        set.setFillAlpha(65);                                          // 투명도 채우기를 65로 설정
+        set.setFillColor(ColorTemplate.getHoloBlue());                 // 채우기 색을 HoloBlue로 설정
+        set.setHighLightColor(Color.rgb(244, 117, 117));               // 하이라이트 컬러(선택시 색)을 rgb(244, 117, 117)로 설정
+        set.setDrawValues(false);                                     // 각 데이터의 값을 텍스트로 나타내지 않게함(false)
+        return set;                                                   // 이렇게 생성한 set을 반환
     }
 }
