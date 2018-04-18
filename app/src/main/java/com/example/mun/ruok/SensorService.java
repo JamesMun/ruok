@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -42,11 +43,22 @@ public class SensorService extends Service {
     private GoogleApiClient mClient = null;
     private boolean authInProgress = false;
 
+    private int hr = 0;
+    private int heart_count = 0;
+
+    private int max_heart_rate = 80;
+    private int min_heart_rate = 60;
+
     // [START mListener_variable_reference]
     // Need to hold a reference to this listener, as it's passed into the "unregister"
     // method in order to stop all sensors from sending data to this listener.
     private OnDataPointListener mListener;
     // [END mListener_variable_reference]
+
+    public static Thread heartThread;
+
+    public boolean fit_mode = false;
+    public static boolean alert = false;
 
     public SensorService() {
     }
@@ -73,6 +85,7 @@ public class SensorService extends Service {
             return Service.START_STICKY;
         } else {
             processCommand(intent);
+            startHeartCheckThread();
         }
 
         return super.onStartCommand(intent, flags, startId);
@@ -202,9 +215,11 @@ public class SensorService extends Service {
                 for (Field field : dataPoint.getDataType().getFields()) {
                     Value val = dataPoint.getValue(field);
                     Float heartrate = val.asFloat();
+                    hr = heartrate.intValue();
                     Fragment_TabMain.heart_rate_value = heartrate.intValue();
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
+
                     //myTextView.append(val + " " + field.getName() + "\r\n");
 
                     /*Message msg = Message.obtain(messageHandler);
@@ -261,5 +276,47 @@ public class SensorService extends Service {
                     }
                 });
         // [END unregister_data_listener]
+    }
+
+    public void startHeartCheckThread() {
+        //작업스레드 생성(매듭 묶는과정)
+        SensorService.heartHandler heartRunnable = new SensorService.heartHandler();
+        heartThread = new Thread(heartRunnable);
+        heartThread.setDaemon(true);
+        heartThread.start();
+    }
+
+    android.os.Handler receivehearthandler = new android.os.Handler() {
+        public void handleMessage(Message msg) {
+            if(!fit_mode) {
+                if(hr > max_heart_rate || hr < min_heart_rate) {
+                    heart_count++;
+                    if(heart_count > 5  && alert != true) {
+                        heart_count = 0;
+                        //heartThread.interrupt();
+                        alert = true;
+                        Intent intent = new Intent(getApplicationContext(),AlertActivity.class);
+                        startActivity(intent);
+                    }
+                } else if(heart_count != 0) {
+                    heart_count = 0;
+                }
+            }
+        }
+    };
+
+    public class heartHandler implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                Message msg = Message.obtain();
+                msg.what = 0;
+                receivehearthandler.sendMessage(msg);
+                try {
+                    Thread.sleep(1000); // 갱신주기 1초
+                } catch (Exception e) {
+                }
+            }
+        }
     }
 }
