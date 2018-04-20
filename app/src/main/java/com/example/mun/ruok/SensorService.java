@@ -45,8 +45,9 @@ public class SensorService extends Service {
 
     private int hr = 0;
 
-    private int max_heart_rate = 80;
-    private int min_heart_rate = 60;
+    public static int max_heart_rate = 100;
+    public static int min_heart_rate = 60;
+    public boolean conn_state = false;
 
     // [START mListener_variable_reference]
     // Need to hold a reference to this listener, as it's passed into the "unregister"
@@ -220,6 +221,7 @@ public class SensorService extends Service {
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
                     Log.i(TAG, "alert: " + alert);
+                    conn_state = true;
 
                     //myTextView.append(val + " " + field.getName() + "\r\n");
 
@@ -271,6 +273,7 @@ public class SensorService extends Service {
                     public void onResult(Status status) {
                         if (status.isSuccess()) {
                             Log.i(TAG, "Listener was removed!");
+                            conn_state = false;
                         } else {
                             Log.i(TAG, "Listener was not removed.");
                         }
@@ -289,18 +292,21 @@ public class SensorService extends Service {
 
     android.os.Handler receivehearthandler = new android.os.Handler() {
         public void handleMessage(Message msg) {
-            if(!fit_mode) {
-                if(hr > max_heart_rate || hr < min_heart_rate) {
-                    heart_count++;
-                    if(heart_count > 5  && alert != true) {
-                        //heartThread.interrupt();
-                        alert = true;
-                        Intent intent = new Intent(getApplicationContext(),AlertActivity.class);
-                        startActivity(intent);
+            if(conn_state) {
+                if(!fit_mode) {
+                    if(hr > max_heart_rate || hr < min_heart_rate) {
+                        heart_count++;
+                        if(heart_count > 5  && alert != true) {
+                            //heartThread.interrupt();
+                            alert = true;
+                            Intent intent = new Intent(getApplicationContext(),AlertActivity.class);
+                            startActivity(intent);
+                        }
+                    } else if(heart_count != 0) {
+                        heart_count = 0;
                     }
-                } else if(heart_count != 0) {
-                    heart_count = 0;
                 }
+                conn_state = false;
             }
         }
     };

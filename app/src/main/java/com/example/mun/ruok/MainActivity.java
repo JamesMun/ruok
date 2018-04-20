@@ -2,11 +2,13 @@ package com.example.mun.ruok;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.hardware.Sensor;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 
@@ -17,7 +19,6 @@ public class MainActivity extends AppCompatActivity {
     private Fragment settingFragment;
 
     public static MainActivity UserActContext;
-
     public static Activity UserActivity;
 
     public static String account;
@@ -76,6 +77,8 @@ public class MainActivity extends AppCompatActivity {
             public void onTabSelected(TabLayout.Tab tab) {
                 int position = tab.getPosition();
                 Log.d("MainActivity", "선택된 탭 : " + position);
+                Log.d("MainActivity", String.valueOf(SensorService.min_heart_rate));
+                Log.d("MainActivity", String.valueOf(SensorService.max_heart_rate));
 
                 Fragment selected = null;
                 if(position == 0) {
