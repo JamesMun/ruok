@@ -1,10 +1,12 @@
 package com.example.mun.ruok;
 
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,23 +18,33 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.mun.ruok.Database.FitSQLiteHelper;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 
+import java.util.Calendar;
+
 import static com.example.mun.ruok.MainActivity.UserActContext;
 
 public class SettingFragment extends Fragment {
+
+    private static final String TAG = "SettingFragment";
 
     private ViewGroup rootView;
     private PopupWindow heartPopup = null;
 
     public static int maxhr, minhr;
 
+    public static int fitHour=0, fitMinute=0;
+
     private GoogleSignInClient mGoogleSignInClient;
+
+    private FitSQLiteHelper Fitsqlhelper = new FitSQLiteHelper();
     GoogleSignInAccount userAccount;
 
     String[] values = {"로그아웃", "서비스 중지", "심박수 설정", "운동시간", "만든이"};
@@ -64,11 +76,14 @@ public class SettingFragment extends Fragment {
                     signOut();
                 }
                 else if(position == 1) {
-                    UserActContext.stopSV();
+                    UserActContext.stopSensorService();
                 }
                 else if(position == 2) {
                     HeartDialog heartDialog = new HeartDialog(getContext());
                     heartDialog.callFunction();
+                }
+                else if(position == 3) {
+                    setFitnessTime();
                 }
             }
         });
@@ -92,5 +107,21 @@ public class SettingFragment extends Fragment {
 
         startActivity(intent);
         UserActContext.finish();
+    }
+
+    private void setFitnessTime() {
+        TimePickerDialog.OnTimeSetListener timeListener = new TimePickerDialog.OnTimeSetListener() {
+
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                fitHour = hourOfDay;
+                fitMinute = minute;
+                Fitsqlhelper.insertData(MainActivity.db, fitHour, fitMinute);
+            }
+        };
+
+        TimePickerDialog fitDialog = new TimePickerDialog(getContext(), timeListener, fitHour, fitMinute, true);
+
+        fitDialog.show();
     }
 }

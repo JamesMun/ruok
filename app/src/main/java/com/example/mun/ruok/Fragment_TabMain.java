@@ -87,8 +87,8 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     private static final int FASTEST_UPDATE_INTERVAL_MS = 15000;
 
-    public static Double lat = 32.882499;
-    public static Double lon = -117.234644;
+    private Double lat = 32.882499;
+    private Double lon = -117.234644;
 
     private int heart_start = 0;
     public static int heart_rate_value = 0, rr_rate_value = 0;
@@ -222,7 +222,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     private void StartLocationService() {
         LocationManager manager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         GPSListener gpsListener = new GPSListener();
-        long minTime = 3000;
+        long minTime = 1000;
         float minDistance = 0;
         try {   //GPS 위치 요청
             if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -251,7 +251,6 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
             e.printStackTrace();
         }
     }
-
 
     private class GPSListener implements android.location.LocationListener {
         @Override

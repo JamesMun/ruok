@@ -2,6 +2,7 @@ package com.example.mun.ruok;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,6 +14,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mun.ruok.Database.UserSQLiteHelper;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -34,7 +36,11 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private static final String TAG = "LoginActivity";
 
     private GoogleSignInClient mGoogleSignInClient;
-    private TextView mStatusTextView;
+    private UserSQLiteHelper Usersqlhelper = new UserSQLiteHelper();
+
+    private SQLiteDatabase db;
+
+
     GoogleSignInAccount userAccount;
 
     @Override
@@ -111,8 +117,20 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             userAccount = account;//로그인된 계정 정보
 
+            DBservice();
+
+            if(!Usersqlhelper.isTable(db)) {
+                Usersqlhelper.createTable(db);
+                Usersqlhelper.insertData(db, userAccount.getId());
+            }
+            else {
+                Usersqlhelper.removeData(db);
+                Usersqlhelper.insertData(db, userAccount.getId());
+            }
+
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             intent.putExtra("account", userAccount.getEmail());
+            db.close();
 
             startActivity(intent);
             finish();
@@ -148,6 +166,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     }
 
+    private void DBservice() {
+        db = openOrCreateDatabase("RUOK", Context.MODE_PRIVATE, null);
+    }
 
     @Override
     public void onClick(View v) {

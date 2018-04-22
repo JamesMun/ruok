@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "508790349548",
+    "firebase_url": "https://areyouok-1521382934909.firebaseio.com",
+    "project_id": "areyouok-1521382934909",
+    "storage_bucket": "areyouok-1521382934909.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508790349548:android:a420b2cac4b6143d",
+        "android_client_info": {
+          "package_name": "com.example.mun.ruok"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "508790349548-6ss9q2m085fjvs8i417ujrudum7udecn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mun.ruok",
+            "certificate_hash": "69db49e2e5914bf40ca4885f3b4ccc06242b1adb"
+          }
+        },
+        {
+          "client_id": "508790349548-deqbbaar8t2eq896ospc6eabd5b58sn0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOHgaXs8fcASA6Ye-w7QnzUhFQP0CSEEQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "508790349548-deqbbaar8t2eq896ospc6eabd5b58sn0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,15 +1,23 @@
 package com.example.mun.ruok;
 
+import android.Manifest;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.example.mun.ruok.Database.FitSQLiteHelper;
+import com.example.mun.ruok.Database.HeartSQLiteHelper;
+import com.example.mun.ruok.Database.UserSQLiteHelper;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -26,13 +34,14 @@ import com.google.android.gms.fitness.request.DataSourcesRequest;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.fitness.result.DataSourcesResult;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
+
+import static android.location.LocationManager.GPS_PROVIDER;
 
 public class SensorService extends Service {
     private static final String TAG = "SensorService";
@@ -47,7 +56,7 @@ public class SensorService extends Service {
 
     public static int max_heart_rate = 100;
     public static int min_heart_rate = 60;
-    public boolean conn_state = false;
+    public static boolean conn_state = false;
 
     // [START mListener_variable_reference]
     // Need to hold a reference to this listener, as it's passed into the "unregister"
@@ -60,6 +69,21 @@ public class SensorService extends Service {
 
     public boolean fit_mode = false;
     public static boolean alert = false;
+
+    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
+    private DatabaseReference databaseReference = firebaseDatabase.getReference();
+
+    private String userid, account;
+
+    private HeartDTO heartDTO = new HeartDTO();
+
+    private Double lat;
+    private Double lon;
+
+    public static HeartSQLiteHelper HRsqlhelper = new HeartSQLiteHelper();
+    private UserSQLiteHelper Usersqlhelper = new UserSQLiteHelper();
+    private FitSQLiteHelper Fitsqlhelper = new FitSQLiteHelper();
+
 
     public SensorService() {
     }
@@ -74,7 +98,22 @@ public class SensorService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        userid = Usersqlhelper.selectAll(MainActivity.db);
+        account = MainActivity.account;
+
+        if(HRsqlhelper.isTable(MainActivity.db)) {
+            HRsqlhelper.selectAll(MainActivity.db);
+            Log.d(TAG, "데이터베이스 호출");
+        }
+        if(Fitsqlhelper.isTable(MainActivity.db)) {
+            Fitsqlhelper.selectAll(MainActivity.db);
+        }
+        else {
+            Fitsqlhelper.createTable(MainActivity.db);
+        }
+
         Log.d(TAG, "onCreate() 호출됨.");
+        //Log.d(TAG, userid);
     }
 
     @Override
@@ -85,14 +124,14 @@ public class SensorService extends Service {
         if(intent == null) {
             return Service.START_STICKY;
         } else {
+            StartLocationService();
             processCommand(intent);
-            startHeartCheckThread();
         }
 
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void processCommand(Intent intent) {
+    public void processCommand(Intent intent) {
         mClient = new GoogleApiClient.Builder(this)
                 .addApi(Fitness.SENSORS_API)
                 //.addApi(Fitness.HISTORY_API)
@@ -163,6 +202,8 @@ public class SensorService extends Service {
                 .build();
 
         mClient.connect();
+
+        startHeartCheckThread();
     }
 
     @Override
@@ -217,17 +258,11 @@ public class SensorService extends Service {
                     Value val = dataPoint.getValue(field);
                     Float heartrate = val.asFloat();
                     hr = heartrate.intValue();
-                    Fragment_TabMain.heart_rate_value = heartrate.intValue();
+                    Fragment_TabMain.heart_rate_value = hr;
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
-                    Log.i(TAG, "alert: " + alert);
+                    //Log.i(TAG, "alert: " + alert);
                     conn_state = true;
-
-                    //myTextView.append(val + " " + field.getName() + "\r\n");
-
-                    /*Message msg = Message.obtain(messageHandler);
-                    msg.obj = val + " " + field.getName();
-                    messageHandler.sendMessage(msg);*/
                 }
             }
         };
@@ -293,6 +328,9 @@ public class SensorService extends Service {
     android.os.Handler receivehearthandler = new android.os.Handler() {
         public void handleMessage(Message msg) {
             if(conn_state) {
+                setHeartData();
+                databaseReference.child(userid + "-RealTimeHeart").setValue(heartDTO);
+                databaseReference.child(userid + "-History").push().setValue(heartDTO);
                 if(!fit_mode) {
                     if(hr > max_heart_rate || hr < min_heart_rate) {
                         heart_count++;
@@ -323,6 +361,64 @@ public class SensorService extends Service {
                 } catch (Exception e) {
                 }
             }
+        }
+    }
+    public void setHeartData() {
+        long now = System.currentTimeMillis();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+        Date date = new Date(now);
+
+        heartDTO.account = account;
+        heartDTO.HR = hr;
+        heartDTO.TS = dateFormat.format(date);
+        heartDTO.LAT = lat;
+        heartDTO.LON = lon;
+    }
+
+
+    private class GPSListener implements android.location.LocationListener {
+        @Override
+        public void onLocationChanged(Location location) {
+            lat = location.getLatitude();
+            lon = location.getLongitude();
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+        }
+    }
+
+    private void StartLocationService() {
+        LocationManager manager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        GPSListener gpsListener = new GPSListener();
+        long minTime = 1000;
+        float minDistance = 0;
+        try {   //GPS 위치 요청
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            manager.requestLocationUpdates(GPS_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
+
+            // location request with network
+            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
+
+        } catch (SecurityException e) {
+            e.printStackTrace();
         }
     }
 }

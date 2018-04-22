@@ -1,6 +1,8 @@
 package com.example.mun.ruok;
 import android.app.Dialog;
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -9,6 +11,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mun.ruok.Database.HeartSQLiteHelper;
+
 /**
  * Created by Administrator on 2017-08-07.
  */
@@ -16,6 +20,7 @@ import android.widget.Toast;
 public class HeartDialog {
 
     private Context context;
+    private String TAG = "HeartDialog";
 
     public HeartDialog(Context context) {
         this.context = context;
@@ -42,6 +47,9 @@ public class HeartDialog {
         final EditText maxhredit = (EditText)dlg.findViewById(R.id.maxheartrate);
         final EditText minhredit = (EditText)dlg.findViewById(R.id.minheartrate);
 
+        maxhredit.setText(String.valueOf(SensorService.max_heart_rate));
+        minhredit.setText(String.valueOf(SensorService.min_heart_rate));
+
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -57,6 +65,17 @@ public class HeartDialog {
                 if(SettingFragment.maxhr > SettingFragment.minhr) {
                     SensorService.max_heart_rate = SettingFragment.maxhr;
                     SensorService.min_heart_rate = SettingFragment.minhr;
+
+                    if(!SensorService.HRsqlhelper.isTable(MainActivity.db)) {
+                        SensorService.HRsqlhelper.createTable(MainActivity.db);
+                        SensorService.HRsqlhelper.insertData(MainActivity.db, SettingFragment.maxhr, SettingFragment.minhr);
+                        Log.d(TAG, "테이블 생성 후 저장");
+                    }
+                    else {
+                        SensorService.HRsqlhelper.removeData(MainActivity.db);
+                        SensorService.HRsqlhelper.insertData(MainActivity.db, SettingFragment.maxhr, SettingFragment.minhr);
+                        Log.d(TAG, "데이터 삭제 후 저장");
+                    }
 
                     // 커스텀 다이얼로그를 종료한다.
                     dlg.dismiss();

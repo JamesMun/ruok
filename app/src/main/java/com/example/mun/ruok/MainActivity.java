@@ -1,7 +1,10 @@
 package com.example.mun.ruok;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.hardware.Sensor;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -11,15 +14,19 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.mun.ruok.SensorService;
+
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "Main";
+    private static final String TAG = "MainActivity";
     private Fragment tabFragment;
     private Fragment settingFragment;
 
     public static MainActivity UserActContext;
     public static Activity UserActivity;
+
+    public static SQLiteDatabase db;
 
     public static String account;
 
@@ -30,25 +37,32 @@ public class MainActivity extends AppCompatActivity {
 
         tabMake();
         getUserInfo();
+        DBservice();
 
-        Intent intent = new Intent(this,SensorService.class);
-        startService(intent);
+        if(!isServiceRunning()) {
+            Intent intent = new Intent(this,SensorService.class);
+            startService(intent);
+            Log.d(TAG,"ServiceStart");
+        }
 
         UserActContext = this;
         UserActivity = this;
     }
 
-    public void stopSV() {
-
+    public void stopSensorService() {
         Intent intent = new Intent(this, SensorService.class);
         stopService(intent);
+        Log.d(TAG,"ServiceStop");
     }
 
     private void getUserInfo() {
         Intent intent = getIntent();
         account = intent.getExtras().getString("account");    // 로그인 결과로 넘어온 유저 계정
         Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
+    }
 
+    private void DBservice() {
+        db = openOrCreateDatabase("RUOK", Context.MODE_PRIVATE, null);
     }
 
     private void tabMake() {
@@ -107,5 +121,20 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    public boolean isServiceRunning()
+    {
+        ActivityManager manager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);
+
+        Intent intent = new Intent(this,SensorService.class);
+
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
+        {
+            if ("com.example.mun.ruok.SensorService".equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
