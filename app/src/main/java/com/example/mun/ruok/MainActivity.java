@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private Fragment tabFragment;
     private Fragment settingFragment;
+    private Fragment historyFragment;
 
     public static MainActivity UserActContext;
     public static Activity UserActivity;
@@ -69,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
         tabFragment = new Fragment_TabMain();
         settingFragment = new SettingFragment();
+        historyFragment = new HistoryFragment();
 
         android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
@@ -98,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 if(position == 0) {
                     selected = tabFragment;
                 } else if(position == 1) {
-                    selected = settingFragment;
+                    selected = historyFragment;
                 } else if(position == 2) {
                     selected = settingFragment;
                 } else if(position == 3) {

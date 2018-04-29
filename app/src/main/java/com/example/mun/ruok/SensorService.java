@@ -38,6 +38,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -73,7 +74,7 @@ public class SensorService extends Service {
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
-    private String userid, account;
+    public static String userid, account;
 
     private HeartDTO heartDTO = new HeartDTO();
 
@@ -83,6 +84,8 @@ public class SensorService extends Service {
     public static HeartSQLiteHelper HRsqlhelper = new HeartSQLiteHelper();
     private UserSQLiteHelper Usersqlhelper = new UserSQLiteHelper();
     private FitSQLiteHelper Fitsqlhelper = new FitSQLiteHelper();
+
+    private String Today,currentdate;
 
 
     public SensorService() {
@@ -329,8 +332,15 @@ public class SensorService extends Service {
         public void handleMessage(Message msg) {
             if(conn_state) {
                 setHeartData();
+                final Calendar cal = Calendar.getInstance();
+
+                if(String.format("%d",cal.get(Calendar.DATE)) != Today) {
+                    currentdate = String.format("%d-%d-%d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DATE));
+                }
+
                 databaseReference.child(userid + "-RealTimeHeart").setValue(heartDTO);
-                databaseReference.child(userid + "-History").push().setValue(heartDTO);
+                databaseReference.child(userid + "-History").child(currentdate).push().setValue(heartDTO);
+
                 if(!fit_mode) {
                     if(hr > max_heart_rate || hr < min_heart_rate) {
                         heart_count++;

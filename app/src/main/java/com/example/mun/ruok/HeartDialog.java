@@ -81,7 +81,7 @@ public class HeartDialog {
                     dlg.dismiss();
                 }
                 else {
-                    Toast.makeText(MainActivity.UserActContext, "최대 심박수가 최소 심박수보다 커야합니다.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.UserActContext, "최대 심박수가 최소 심박수보다 커야합니다.", Toast.LENGTH_LONG).show();
                 }
             }
         });
