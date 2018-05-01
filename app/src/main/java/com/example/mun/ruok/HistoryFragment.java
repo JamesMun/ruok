@@ -23,16 +23,23 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -55,10 +62,14 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
+    private ClusterManager<House> mClusterManager;
+
+    private ArrayList<LatLng> marker = new ArrayList<>();
+
     private String date_of_history;
     private String str[];
 
-    private int count;
+    private int count, markercount;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -98,16 +109,25 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 count = 0;
+                                markercount = 0;
+
+                                map.clear();        // 맵 상에 있는 모든 마커 삭제
+                                marker.clear();     // 이전에 불러온 마커 위치 삭제
 
                                 for(DataSnapshot snapshot : dataSnapshot.getChildren()) {
                                     HeartDTO heartDTO = snapshot.getValue(HeartDTO.class);
 
                                     str = heartDTO.TS.split(" ");
+                                    ShowMyLocaion(heartDTO.LAT, heartDTO.LON, map, str[1], heartDTO.HR);
 
+                                    marker.add(new LatLng(heartDTO.LAT, heartDTO.LON));
                                     entries.add(new Entry(count, heartDTO.HR));
                                     labels.add(str[1]);
                                     count++;
                                 }
+
+                                map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(count-1)));
+                                map.animateCamera(CameraUpdateFactory.zoomTo(17));
 
                                 LineDataSet lineDataSet = createSet(Color.parseColor("#FFFF7A87"), "Heart-Rate", entries);
                                 LineData lineData = new LineData(lineDataSet);
@@ -115,6 +135,23 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                                 chart_setting(labels);
 
                                 mChart.setData(lineData);
+
+                                mChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+                                    @Override
+                                    public void onValueSelected(Entry e, Highlight h) {
+                                        int x =  (int) e.getX();
+
+                                        map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(x)));
+                                        map.animateCamera(CameraUpdateFactory.zoomTo(17));
+
+                                        Toast.makeText(MainActivity.UserActContext, "심박수 : " + String.valueOf((int) entries.get(x).getY()), Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    @Override
+                                    public void onNothingSelected() {
+
+                                    }
+                                });
 
                                 mChart.invalidate();
                                 mChart.setVisibleXRangeMaximum(10);                           // chart에서 최대 X좌표기준으로 몇개의 데이터를 보여줄지 설정함
@@ -189,8 +226,7 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
 
-        //BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.aqicloud1);
-        //ShowMyLocaion(lat,lon,map);
+        mClusterManager = new ClusterManager<>(MainActivity.UserActContext, map);
     }
 
     private void chart_setting(final ArrayList<String> labels) {
@@ -230,5 +266,33 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
         set.setHighLightColor(Color.rgb(244, 117, 117));               // 하이라이트 컬러(선택시 색)을 rgb(244, 117, 117)로 설정
         set.setDrawValues(false);                                     // 각 데이터의 값을 텍스트로 나타내지 않게함(false)
         return set;                                                   // 이렇게 생성한 set을 반환
+    }
+
+    private void ShowMyLocaion(Double lat, Double lon, GoogleMap googleMap, String title, int HeartRate) {
+        try {
+            LatLng nowLocation = new LatLng(lat, lon);
+            MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(nowLocation);
+            markerOptions.title(title);
+
+            //BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(getResources().getIdentifier(cloudimage,"drawable","com.example.khseob0715.sanfirst"));
+
+            //markerOptions.icon(icon);
+
+            //googleMap.clear();
+
+            // Get back the mutable Circle
+            //googleMap.addCircle(circleOptions);
+
+            googleMap.addMarker(markerOptions);
+
+            if(HeartRate < SensorService.max_heart_rate && HeartRate > SensorService.min_heart_rate) {
+                mClusterManager.addItem(new House(nowLocation, title));
+            }
+            //googleMap.moveCamera(CameraUpdateFactory.newLatLng(nowLocation));
+            //googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+
+        }   catch (IllegalStateException e)   {
+        }
     }
 }
