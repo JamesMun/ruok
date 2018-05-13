@@ -16,31 +16,31 @@ public class UserSQLiteHelper {
     //public SQLiteDatabase db;
 
     // Table 생성
-    public  void createTable(SQLiteDatabase db){
-        String USER_CT = "create table if not exists USER(id INTEGER, UserID TEXT) ";
+    public void createTable(SQLiteDatabase db){
+        String USER_CT = "create table if not exists USER(id INTEGER, UserID TEXT, UserType INTEGER) ";
         db.execSQL(USER_CT);
     }
 
     // Table 삭제
-    public  void dropTable(SQLiteDatabase db){
+    public void dropTable(SQLiteDatabase db){
         String USER_DT = "drop table if exists USER;";
         db.execSQL(USER_DT);
     }
 
     // Data 추가
-    public  void insertData(SQLiteDatabase db, String UserID){
-        String USER_ID = "insert into USER values(1, 'RUOK-" + UserID + "');";
+    public void insertData(SQLiteDatabase db, String UserID, int UserType) {
+        String USER_ID = "insert into USER values(1, 'RUOK-" + UserID + "'," + UserType + ");";
         db.execSQL(USER_ID);
     }
 
     // Data 삭제
-    public  void removeData(SQLiteDatabase db){
+    public void removeData(SQLiteDatabase db){
         String USER_RD = "delete from USER where id = 1;";
         db.execSQL(USER_RD);
     }
 
     //--------------------------insert 확인
-    public String selectAll(SQLiteDatabase db){
+    public void selectAll(SQLiteDatabase db){
         String sql = "select * from USER;";
         String USERID = null;
         Cursor results = db.rawQuery(sql, null);
@@ -48,12 +48,11 @@ public class UserSQLiteHelper {
         results.moveToFirst();
 
         while(!results.isAfterLast()){
-            USERID = results.getString(1);
+            SensorService.userid = results.getString(1);
+            SensorService.UserType = results.getInt(2);
             results.moveToNext();
         }
         results.close();
-
-        return USERID;
     }
 
     public boolean isTable(SQLiteDatabase db) {

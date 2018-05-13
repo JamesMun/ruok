@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static MainActivity UserActContext;
     public static Activity UserActivity;
+    public static int UserType;
 
     public static SQLiteDatabase db;
 
@@ -170,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
     private void getUserInfo() {
         Intent intent = getIntent();
         account = intent.getExtras().getString("account");    // 로그인 결과로 넘어온 유저 계정
-        Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
     }
 
     private void DBservice() {
@@ -203,9 +204,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 int position = tab.getPosition();
-                Log.d("MainActivity", "선택된 탭 : " + position);
-                Log.d("MainActivity", String.valueOf(SensorService.min_heart_rate));
-                Log.d("MainActivity", String.valueOf(SensorService.max_heart_rate));
 
                 Fragment selected = null;
                 if(position == 0) {

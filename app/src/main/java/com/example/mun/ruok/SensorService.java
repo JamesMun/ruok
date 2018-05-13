@@ -34,8 +34,11 @@ import com.google.android.gms.fitness.request.DataSourcesRequest;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.fitness.result.DataSourcesResult;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -50,13 +53,17 @@ public class SensorService extends Service {
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
+    private static final int DEFAULT_CODE = 0;
+    private static final int REQUEST_CONNECTING_CODE = 1;
+    private static final int CONNECTING_PERMISSION_CODE = 2;
+
     private GoogleApiClient mClient = null;
     private boolean authInProgress = false;
 
     private int hr = 0;
 
-    public static int max_heart_rate = 100;
-    public static int min_heart_rate = 60;
+    public static int max_heart_rate = 120;
+    public static int min_heart_rate = 50;
     public static boolean conn_state = false;
 
     // [START mListener_variable_reference]
@@ -67,6 +74,8 @@ public class SensorService extends Service {
 
     public static int heart_count = 0;
     public static Thread heartThread;
+    public static int CONNECTING_STATE;
+    public static String CONNECTING_ACCOUNT;
 
     public boolean fit_mode = false;
     public static boolean alert = false;
@@ -75,6 +84,7 @@ public class SensorService extends Service {
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
     public static String userid, account;
+    public static int UserType;
 
     private HeartDTO heartDTO = new HeartDTO();
 
@@ -101,13 +111,14 @@ public class SensorService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        userid = Usersqlhelper.selectAll(MainActivity.db);
+        Usersqlhelper.selectAll(MainActivity.db);
         account = MainActivity.account;
 
         if(HRsqlhelper.isTable(MainActivity.db)) {
             HRsqlhelper.selectAll(MainActivity.db);
             Log.d(TAG, "데이터베이스 호출");
         }
+
         if(Fitsqlhelper.isTable(MainActivity.db)) {
             Fitsqlhelper.selectAll(MainActivity.db);
         }
@@ -115,8 +126,10 @@ public class SensorService extends Service {
             Fitsqlhelper.createTable(MainActivity.db);
         }
 
+        checkConnection();  // 계정 간 연결 상태 확인
+
         Log.d(TAG, "onCreate() 호출됨.");
-        //Log.d(TAG, userid);
+        Log.d(TAG, String.valueOf(UserType));
     }
 
     @Override
@@ -127,8 +140,42 @@ public class SensorService extends Service {
         if(intent == null) {
             return Service.START_STICKY;
         } else {
-            StartLocationService();
-            processCommand(intent);
+            if(UserType == 0) {
+                StartLocationService();
+                processCommand(intent);
+            } else if(UserType == 1) {
+                databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
+                        if(connectDTO.CONNECTING_CODE == CONNECTING_PERMISSION_CODE) {
+                            CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
+                            CONNECTING_STATE = CONNECTING_PERMISSION_CODE;
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+                if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
+                    databaseReference.child(CONNECTING_ACCOUNT + "-RealTimeHeart").addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            heartDTO = dataSnapshot.getValue(HeartDTO.class);
+                            Fragment_TabMain.heart_rate_value = heartDTO.HR;
+                            Fragment_TabMain.heart_time = heartDTO.TS;
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+            }
         }
 
         return super.onStartCommand(intent, flags, startId);
@@ -261,7 +308,7 @@ public class SensorService extends Service {
                     Value val = dataPoint.getValue(field);
                     Float heartrate = val.asFloat();
                     hr = heartrate.intValue();
-                    Fragment_TabMain.heart_rate_value = hr;
+
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
                     //Log.i(TAG, "alert: " + alert);
@@ -332,6 +379,10 @@ public class SensorService extends Service {
         public void handleMessage(Message msg) {
             if(conn_state) {
                 setHeartData();
+
+                Fragment_TabMain.heart_rate_value = heartDTO.HR;
+                Fragment_TabMain.heart_time = heartDTO.TS;
+
                 final Calendar cal = Calendar.getInstance();
 
                 if(String.format("%d",cal.get(Calendar.DATE)) != Today) {
@@ -365,7 +416,9 @@ public class SensorService extends Service {
             while (true) {
                 Message msg = Message.obtain();
                 msg.what = 0;
-                receivehearthandler.sendMessage(msg);
+                if(UserType == 0) {
+                    receivehearthandler.sendMessage(msg);
+                }
                 try {
                     Thread.sleep(1000); // 갱신주기 1초
                 } catch (Exception e) {
@@ -430,5 +483,30 @@ public class SensorService extends Service {
         } catch (SecurityException e) {
             e.printStackTrace();
         }
+    }
+
+    void checkConnection() {
+        databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
+
+                try {
+                    CONNECTING_STATE = connectDTO.CONNECTING_CODE;
+                    Log.d(TAG, connectDTO.ConnectionWith);
+                } catch (Exception e) {
+                    connectDTO = new ConnectDTO();
+                    connectDTO.ConnectionWith = "연결 없음";
+                    connectDTO.CONNECTING_CODE = DEFAULT_CODE;
+                    databaseReference.child("Connection").child(account).setValue(connectDTO);
+                    Log.d(TAG,"데이터베이스 생성");
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 }

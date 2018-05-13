@@ -11,6 +11,8 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +25,11 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.example.mun.ruok.Fragment_TabMain;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.iid.FirebaseInstanceId;
+
+import java.util.concurrent.atomic.AtomicMarkableReference;
 
 /**
  * Created by Mun on 2018-03-22.
@@ -35,11 +42,15 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private static final int RC_SIGN_IN = 9001;
     private static final String TAG = "LoginActivity";
 
+    private int UserType;
+
     private GoogleSignInClient mGoogleSignInClient;
     private UserSQLiteHelper Usersqlhelper = new UserSQLiteHelper();
 
-    private SQLiteDatabase db;
+    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
+    private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
+    private SQLiteDatabase db;
 
     GoogleSignInAccount userAccount;
 
@@ -82,9 +93,16 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         //이미 구글 로그인이 된(이 앱에 로그인 된) 상태
         if (account != null) {
+            String email = account.getEmail();
+
+            UserDTO userData = new UserDTO();
+            userData.userEmailID = email.substring(0, email.indexOf('@'));
+            userData.fcmToken = FirebaseInstanceId.getInstance().getToken();
+
+            databaseReference.child("Users").child(userData.userEmailID).setValue(userData);
 
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-            intent.putExtra("account", account.getEmail());
+            intent.putExtra("account", userData.userEmailID);
 
             startActivity(intent);
             finish();
@@ -105,8 +123,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             // a listener.
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
-
-            //signOut(); //로그인 끊기.
         }
     }
     // [END onActivityResult]
@@ -120,16 +136,20 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             DBservice();
 
             if(!Usersqlhelper.isTable(db)) {
+                checkUserType();
                 Usersqlhelper.createTable(db);
-                Usersqlhelper.insertData(db, userAccount.getId());
             }
             else {
+                checkUserType();
                 Usersqlhelper.removeData(db);
-                Usersqlhelper.insertData(db, userAccount.getId());
             }
 
+            Usersqlhelper.insertData(db, userAccount.getId(), UserType);
+
+            String email = userAccount.getEmail();
+
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-            intent.putExtra("account", userAccount.getEmail());
+            intent.putExtra("account", email.substring(0, email.indexOf('@')));
             db.close();
 
             startActivity(intent);
@@ -176,6 +196,18 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             case R.id.sign_in_button:
                 signIn();
                 break;
+        }
+    }
+
+    private void checkUserType() {
+        RadioGroup rg = (RadioGroup) findViewById(R.id.userradiogroup);
+        int id = rg.getCheckedRadioButtonId();
+        RadioButton rb = (RadioButton) findViewById(id);
+        if(rb.getText().toString().equals("사용자")) {
+            UserType = 0;
+        }
+        else {
+            UserType = 1;
         }
     }
 }

@@ -87,17 +87,17 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     private static final int FASTEST_UPDATE_INTERVAL_MS = 15000;
 
-    private Double lat = 32.882499;
-    private Double lon = -117.234644;
+    private Double lat = 35.140665;
+    private Double lon = 126.9285385;
 
-    private int heart_start = 0;
     public static int heart_rate_value = 0, rr_rate_value = 0;
+    public static String heart_time = "";
 
     private LineChart mChart;
 
     private BluetoothAdapter mBluetoothAdapter = null; /* Intent request codes*/
 
-    private TextView HeartRateText;
+    private TextView HeartRateText,HeartTimeText;
 
     private GoogleMap map;
     private MapView mapView = null;
@@ -125,16 +125,14 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         host.setup();
 
         TabHost.TabSpec spec = host.newTabSpec("tab1");
-        spec.setIndicator(null, ResourcesCompat.getDrawable(getResources(), R.drawable.hearttext, null));
+        spec.setIndicator(null, ResourcesCompat.getDrawable(getResources(), R.drawable.heartrate, null));
         spec.setContent(R.id.tab_content1);
         host.addTab(spec);
 
         spec = host.newTabSpec("tab2");
-        spec.setIndicator(null, ResourcesCompat.getDrawable(getResources(), R.drawable.airtext, null));
+        spec.setIndicator(null, ResourcesCompat.getDrawable(getResources(), R.drawable.graph, null));
         spec.setContent(R.id.tab_content2);
         host.addTab(spec);
-
-        //setHasOptionsMenu(true);
 
         TabMainContext = this;
 
@@ -145,6 +143,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
 
         HeartRateText = (TextView) view.findViewById(R.id.HeartDataValue);
+        HeartTimeText = (TextView) view.findViewById(R.id.MeasurementTime);
         mChart = (LineChart) view.findViewById(R.id.chart);
 
         chart_setting();
@@ -240,13 +239,15 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
             // location request with network
             manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
 
+            /*
+
             Location lastLocation = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
             if (lastLocation != null) {
                 Double latitude = lastLocation.getLatitude();
                 Double longitude = lastLocation.getLongitude();
 
-            }
+            }*/
         } catch (SecurityException e) {
             e.printStackTrace();
         }
@@ -257,7 +258,6 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         public void onLocationChanged(Location location) {
             lat = location.getLatitude();
             lon = location.getLongitude();
-            String msg = "Lat:" + lat + " / Lon:" + lon;
             ShowMyLocaion(lat, lon, map);
         }
 
@@ -309,9 +309,8 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     android.os.Handler receivehearthandler = new android.os.Handler() {
         public void handleMessage(Message msg) {
-            heart_start = heart_rate_value;
-
             HeartRateText.setText(String.valueOf(heart_rate_value));
+            HeartTimeText.setText(heart_time);
         }
     };
 

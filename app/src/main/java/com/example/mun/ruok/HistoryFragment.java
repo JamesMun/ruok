@@ -104,67 +104,70 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                         final ArrayList<String> labels = new ArrayList<String>();
 
                         date_of_history = String.format("%d-%d-%d",year,month+1,dayOfMonth);
-
                         databaseReference.child(SensorService.userid + "-History").child(date_of_history).orderByChild("TS").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
-                                count = 0;
-                                markercount = 0;
+                                try {
+                                    count = 0;
+                                    markercount = 0;
 
-                                map.clear();        // 맵 상에 있는 모든 마커 삭제
-                                marker.clear();     // 이전에 불러온 마커 위치 삭제
+                                    map.clear();        // 맵 상에 있는 모든 마커 삭제
+                                    marker.clear();     // 이전에 불러온 마커 위치 삭제
 
-                                for(DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                                    HeartDTO heartDTO = snapshot.getValue(HeartDTO.class);
+                                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                                        HeartDTO heartDTO = snapshot.getValue(HeartDTO.class);
 
-                                    str = heartDTO.TS.split(" ");
-                                    ShowMyLocaion(heartDTO.LAT, heartDTO.LON, map, str[1], heartDTO.HR);
+                                        str = heartDTO.TS.split(" ");
+                                        ShowMyLocaion(heartDTO.LAT, heartDTO.LON, map, str[1], heartDTO.HR);
 
-                                    marker.add(new LatLng(heartDTO.LAT, heartDTO.LON));
-                                    entries.add(new Entry(count, heartDTO.HR));
-                                    labels.add(str[1]);
-                                    count++;
+                                        marker.add(new LatLng(heartDTO.LAT, heartDTO.LON));
+                                        entries.add(new Entry(count, heartDTO.HR));
+                                        labels.add(str[1]);
+                                        count++;
+                                    }
+
+                                    map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(count - 1)));
+                                    map.animateCamera(CameraUpdateFactory.zoomTo(17));
+
+                                    LineDataSet lineDataSet = createSet(Color.parseColor("#FFFF7A87"), "Heart-Rate", entries);
+                                    LineData lineData = new LineData(lineDataSet);
+
+                                    chart_setting(labels);
+
+                                    mChart.setData(lineData);
+
+                                    mChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+                                        @Override
+                                        public void onValueSelected(Entry e, Highlight h) {
+                                            int x = (int) e.getX();
+
+                                            map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(x)));
+                                            map.animateCamera(CameraUpdateFactory.zoomTo(17));
+
+                                            Toast.makeText(MainActivity.UserActContext, "심박수 : " + String.valueOf((int) entries.get(x).getY()), Toast.LENGTH_SHORT).show();
+                                        }
+
+                                        @Override
+                                        public void onNothingSelected() {
+
+                                        }
+                                    });
+
+                                    mChart.invalidate();
+                                    mChart.setVisibleXRangeMaximum(10);                           // chart에서 최대 X좌표기준으로 몇개의 데이터를 보여줄지 설정함
+                                    mChart.moveViewToX(count);                     // 가장 최근에 추가한 데이터의 위치로 chart를 이동함
+
+                                    dateText.setText(date_of_history);
+                                    } catch (Exception e) {
+                                        Toast.makeText(MainActivity.UserActContext,"데이터가 없습니다.", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
 
-                                map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(count-1)));
-                                map.animateCamera(CameraUpdateFactory.zoomTo(17));
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
 
-                                LineDataSet lineDataSet = createSet(Color.parseColor("#FFFF7A87"), "Heart-Rate", entries);
-                                LineData lineData = new LineData(lineDataSet);
-
-                                chart_setting(labels);
-
-                                mChart.setData(lineData);
-
-                                mChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
-                                    @Override
-                                    public void onValueSelected(Entry e, Highlight h) {
-                                        int x =  (int) e.getX();
-
-                                        map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(x)));
-                                        map.animateCamera(CameraUpdateFactory.zoomTo(17));
-
-                                        Toast.makeText(MainActivity.UserActContext, "심박수 : " + String.valueOf((int) entries.get(x).getY()), Toast.LENGTH_SHORT).show();
-                                    }
-
-                                    @Override
-                                    public void onNothingSelected() {
-
-                                    }
-                                });
-
-                                mChart.invalidate();
-                                mChart.setVisibleXRangeMaximum(10);                           // chart에서 최대 X좌표기준으로 몇개의 데이터를 보여줄지 설정함
-                                mChart.moveViewToX(count);                     // 가장 최근에 추가한 데이터의 위치로 chart를 이동함
-
-                                dateText.setText(date_of_history);
-                            }
-
-                            @Override
-                            public void onCancelled(DatabaseError databaseError) {
-
-                            }
-                        });
+                                }
+                            });
                     }
                 }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE));
                 dialog.getDatePicker().setMaxDate(new Date().getTime());

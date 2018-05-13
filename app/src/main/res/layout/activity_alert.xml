@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#333333"
+    android:background="@drawable/alert_image"
     tools:context=".AlertActivity">
 
     <TextView
@@ -18,8 +19,10 @@
         android:id="@+id/confirmbtn"
         android:layout_width="100dp"
         android:layout_height="wrap_content"
-        android:textAlignment="center"
-        android:text="확인버튼"
-        android:gravity="bottom" />
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="30dp"
+        android:text="확인"
+        android:textAlignment="center" />
 
-</android.support.constraint.ConstraintLayout>
+</RelativeLayout>
