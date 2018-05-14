@@ -1,4 +1,4 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Service;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -9,11 +9,12 @@ import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.example.mun.ruok.Activity.MainActivity;
+import com.example.mun.ruok.DTO.ConnectDTO;
+import com.example.mun.ruok.R;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.RemoteMessage;
-
-import java.util.Map;
 
 public class MyFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
     private static final String TAG = MyFirebaseMessagingService.class.getSimpleName();
@@ -30,8 +31,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
     public void onMessageReceived(RemoteMessage remoteMessage) {
         Log.i(TAG, "onMessageReceived");
 
-        //Map<String, String> data = remoteMessage.getData();
-        String title = remoteMessage.getNotification().getTitle();
+        //String title = remoteMessage.getNotification().getTitle();
         int CONNECTING_CODE = Integer.valueOf(remoteMessage.getNotification().getBody());
         String from = remoteMessage.getNotification().getTag();
 

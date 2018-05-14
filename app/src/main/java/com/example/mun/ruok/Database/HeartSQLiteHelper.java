@@ -5,8 +5,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import com.example.mun.ruok.SensorService;
-import com.example.mun.ruok.SettingFragment;
+import com.example.mun.ruok.Service.SensorService;
 
 public class HeartSQLiteHelper {
 

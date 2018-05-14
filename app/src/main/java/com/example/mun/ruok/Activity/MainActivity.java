@@ -1,4 +1,4 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Activity;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
-import android.hardware.Sensor;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
@@ -19,11 +18,14 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 import android.Manifest;
 
-import com.example.mun.ruok.SensorService;
+import com.example.mun.ruok.Fragment.Fragment_TabMain;
+import com.example.mun.ruok.Fragment.HistoryFragment;
+import com.example.mun.ruok.Fragment.SettingFragment;
+import com.example.mun.ruok.R;
+import com.example.mun.ruok.Service.SensorService;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -171,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
     private void getUserInfo() {
         Intent intent = getIntent();
         account = intent.getExtras().getString("account");    // 로그인 결과로 넘어온 유저 계정
+        //UserType = intent.getExtras().getInt("usertype");
         //Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
     }
 
@@ -242,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
 
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
         {
-            if ("com.example.mun.ruok.SensorService".equals(service.service.getClassName())) {
+            if ("com.example.mun.ruok.Service.SensorService".equals(service.service.getClassName())) {
                 return true;
             }
         }

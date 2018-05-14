@@ -1,17 +1,17 @@
 package com.example.mun.ruok;
 import android.app.Dialog;
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.mun.ruok.Database.HeartSQLiteHelper;
+import com.example.mun.ruok.Activity.MainActivity;
+import com.example.mun.ruok.Service.SensorService;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 /**
  * Created by Administrator on 2017-08-07.
@@ -21,6 +21,10 @@ public class HeartDialog {
 
     private Context context;
     private String TAG = "HeartDialog";
+    private String account = SensorService.account;
+
+    private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
+    private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
     public HeartDialog(Context context) {
         this.context = context;
@@ -56,13 +60,17 @@ public class HeartDialog {
                 // '확인' 버튼 클릭시 메인 액티비티에서 설정한 main_label에
                 // 커스텀 다이얼로그에서 입력한 메시지를 대입한다.
 
+                final int maxhr, minhr;
+
                 String str = maxhredit.getText().toString();
-                SettingFragment.maxhr = Integer.parseInt(str);
+                //SettingFragment.maxhr = Integer.parseInt(str);
+                maxhr = Integer.parseInt(str);
 
                 str = minhredit.getText().toString();
-                SettingFragment.minhr = Integer.parseInt(str);
+                //SettingFragment.minhr = Integer.parseInt(str);
+                minhr = Integer.parseInt(str);
 
-                if(SettingFragment.maxhr > SettingFragment.minhr) {
+                /*if(SettingFragment.maxhr > SettingFragment.minhr) {
                     SensorService.max_heart_rate = SettingFragment.maxhr;
                     SensorService.min_heart_rate = SettingFragment.minhr;
 
@@ -76,6 +84,18 @@ public class HeartDialog {
                         SensorService.HRsqlhelper.insertData(MainActivity.db, SettingFragment.maxhr, SettingFragment.minhr);
                         Log.d(TAG, "데이터 삭제 후 저장");
                     }
+
+                    // 커스텀 다이얼로그를 종료한다.
+                    dlg.dismiss();
+                }*/
+                if(maxhr > minhr) {
+                    databaseReference.child("Users").child(account).child("max_heart_rate").setValue(maxhr);
+                    databaseReference.child("Users").child(account).child("min_heart_rate").setValue(minhr);
+
+                    SensorService.max_heart_rate = maxhr;
+                    SensorService.min_heart_rate = minhr;
+
+                    Log.d(TAG, "데이터 저장 성공");
 
                     // 커스텀 다이얼로그를 종료한다.
                     dlg.dismiss();

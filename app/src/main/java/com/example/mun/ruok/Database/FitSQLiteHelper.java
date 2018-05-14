@@ -3,7 +3,7 @@ package com.example.mun.ruok.Database;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.example.mun.ruok.SettingFragment;
+import com.example.mun.ruok.Fragment.SettingFragment;
 
 public class FitSQLiteHelper {
 

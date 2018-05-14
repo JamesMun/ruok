@@ -1,35 +1,33 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Activity;
 
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mun.ruok.DTO.ConnectDTO;
+import com.example.mun.ruok.DTO.GuardianDTO;
+import com.example.mun.ruok.DTO.UserDTO;
 import com.example.mun.ruok.Database.UserSQLiteHelper;
+import com.example.mun.ruok.R;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.example.mun.ruok.Fragment_TabMain;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
-
-import java.util.concurrent.atomic.AtomicMarkableReference;
 
 /**
  * Created by Mun on 2018-03-22.
@@ -50,7 +48,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
-    private SQLiteDatabase db;
+    private static final int DEFAULT_CODE = 0;
 
     GoogleSignInAccount userAccount;
 
@@ -93,16 +91,11 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         //이미 구글 로그인이 된(이 앱에 로그인 된) 상태
         if (account != null) {
+
             String email = account.getEmail();
 
-            UserDTO userData = new UserDTO();
-            userData.userEmailID = email.substring(0, email.indexOf('@'));
-            userData.fcmToken = FirebaseInstanceId.getInstance().getToken();
-
-            databaseReference.child("Users").child(userData.userEmailID).setValue(userData);
-
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-            intent.putExtra("account", userData.userEmailID);
+            intent.putExtra("account", email.substring(0, email.indexOf('@')));
 
             startActivity(intent);
             finish();
@@ -131,26 +124,14 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-            userAccount = account;//로그인된 계정 정보
 
-            DBservice();
+            String email = account.getEmail();
 
-            if(!Usersqlhelper.isTable(db)) {
-                checkUserType();
-                Usersqlhelper.createTable(db);
-            }
-            else {
-                checkUserType();
-                Usersqlhelper.removeData(db);
-            }
-
-            Usersqlhelper.insertData(db, userAccount.getId(), UserType);
-
-            String email = userAccount.getEmail();
+            checkUserType();
+            makeDBonFirebase(account);
 
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             intent.putExtra("account", email.substring(0, email.indexOf('@')));
-            db.close();
 
             startActivity(intent);
             finish();
@@ -186,8 +167,32 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     }
 
-    private void DBservice() {
-        db = openOrCreateDatabase("RUOK", Context.MODE_PRIVATE, null);
+    private void makeDBonFirebase(GoogleSignInAccount account) {
+        String email = account.getEmail();
+
+        if(UserType == 0) {
+            UserDTO userData = new UserDTO();
+            userData.userEmailID = email.substring(0, email.indexOf('@'));
+            userData.fcmToken = FirebaseInstanceId.getInstance().getToken();
+            userData.max_heart_rate = 120;
+            userData.min_heart_rate = 60;
+            userData.userType = UserType;
+
+            databaseReference.child("Users").child(userData.userEmailID).setValue(userData);
+        } else {
+            GuardianDTO guardianDTO = new GuardianDTO();
+            guardianDTO.userEmailID = email.substring(0, email.indexOf('@'));
+            guardianDTO.fcmToken = FirebaseInstanceId.getInstance().getToken();
+            guardianDTO.userType = UserType;
+
+            databaseReference.child("Users").child(guardianDTO.userEmailID).setValue(guardianDTO);
+        }
+
+        ConnectDTO connectDTO = new ConnectDTO();
+        connectDTO.ConnectionWith = "연결 없음";
+        connectDTO.CONNECTING_CODE = DEFAULT_CODE;
+
+        databaseReference.child("Connection").child(email.substring(0, email.indexOf('@'))).setValue(connectDTO);
     }
 
     @Override

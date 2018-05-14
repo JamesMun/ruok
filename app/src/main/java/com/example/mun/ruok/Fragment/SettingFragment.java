@@ -1,31 +1,32 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Fragment;
 
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.mun.ruok.DTO.ConnectDTO;
+import com.example.mun.ruok.DTO.UserDTO;
 import com.example.mun.ruok.Database.FitSQLiteHelper;
+import com.example.mun.ruok.HeartDialog;
+import com.example.mun.ruok.Activity.LoginActivity;
+import com.example.mun.ruok.Activity.MainActivity;
+import com.example.mun.ruok.R;
+import com.example.mun.ruok.Service.SensorService;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.firebase.database.DataSnapshot;
@@ -39,11 +40,10 @@ import org.json.JSONObject;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Calendar;
 
-import static com.example.mun.ruok.MainActivity.UserActContext;
-import static com.example.mun.ruok.MainActivity.account;
-import static com.example.mun.ruok.SensorService.CONNECTING_STATE;
+import static com.example.mun.ruok.Activity.MainActivity.UserActContext;
+import static com.example.mun.ruok.Activity.MainActivity.account;
+import static com.example.mun.ruok.Service.SensorService.CONNECTING_STATE;
 
 public class SettingFragment extends Fragment {
 
@@ -188,7 +188,7 @@ public class SettingFragment extends Fragment {
                 .setPositiveButton("보내기", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        sendPostToFCM(editText.getText().toString(),REQUEST_CONNECTING_CODE);
+                        sendPostToFCM(editText.getText().toString(), REQUEST_CONNECTING_CODE);
                     }
                 })
                 .setNegativeButton("취소", new DialogInterface.OnClickListener() {
@@ -215,7 +215,7 @@ public class SettingFragment extends Fragment {
                                     JSONObject notification = new JSONObject();
                                     notification.put("title", "Connecting Code");
                                     notification.put("body",CODE);
-                                    notification.put("tag",USER);
+                                    notification.put("tag",account);
                                     root.put("notification", notification);
                                     root.put("to", userData.fcmToken);
                                     // FMC 메시지 생성 end

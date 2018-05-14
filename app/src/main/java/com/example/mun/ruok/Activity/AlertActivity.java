@@ -1,12 +1,14 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Activity;
 
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
+
+import com.example.mun.ruok.R;
+import com.example.mun.ruok.Service.SensorService;
 
 public class AlertActivity extends AppCompatActivity{
 

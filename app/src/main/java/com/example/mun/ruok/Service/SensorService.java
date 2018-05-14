@@ -1,4 +1,4 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Service;
 
 import android.Manifest;
 import android.app.Service;
@@ -15,9 +15,15 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import com.example.mun.ruok.Activity.AlertActivity;
+import com.example.mun.ruok.Activity.MainActivity;
+import com.example.mun.ruok.DTO.ConnectDTO;
+import com.example.mun.ruok.DTO.HeartDTO;
+import com.example.mun.ruok.DTO.UserDTO;
 import com.example.mun.ruok.Database.FitSQLiteHelper;
 import com.example.mun.ruok.Database.HeartSQLiteHelper;
 import com.example.mun.ruok.Database.UserSQLiteHelper;
+import com.example.mun.ruok.Fragment.Fragment_TabMain;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -111,25 +117,17 @@ public class SensorService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        Usersqlhelper.selectAll(MainActivity.db);
         account = MainActivity.account;
-
-        if(HRsqlhelper.isTable(MainActivity.db)) {
-            HRsqlhelper.selectAll(MainActivity.db);
-            Log.d(TAG, "데이터베이스 호출");
-        }
-
-        if(Fitsqlhelper.isTable(MainActivity.db)) {
-            Fitsqlhelper.selectAll(MainActivity.db);
-        }
-        else {
-            Fitsqlhelper.createTable(MainActivity.db);
-        }
+        UserType = MainActivity.UserType;
 
         checkConnection();  // 계정 간 연결 상태 확인
 
+        if(UserType == 0) { // 사용자인 경우에만
+            LoadDataonFirebase(); // 서버에서 데이터 로드
+        }
+
         Log.d(TAG, "onCreate() 호출됨.");
-        Log.d(TAG, String.valueOf(UserType));
+        Log.d(TAG, "유저타입 : " + UserType);
     }
 
     @Override
@@ -144,24 +142,8 @@ public class SensorService extends Service {
                 StartLocationService();
                 processCommand(intent);
             } else if(UserType == 1) {
-                databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
-                        if(connectDTO.CONNECTING_CODE == CONNECTING_PERMISSION_CODE) {
-                            CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
-                            CONNECTING_STATE = CONNECTING_PERMISSION_CODE;
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
-
                 if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
-                    databaseReference.child(CONNECTING_ACCOUNT + "-RealTimeHeart").addValueEventListener(new ValueEventListener() {
+                    databaseReference.child("RealTime").child(CONNECTING_ACCOUNT).addValueEventListener(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             heartDTO = dataSnapshot.getValue(HeartDTO.class);
@@ -195,7 +177,7 @@ public class SensorService extends Service {
 
                             @Override
                             public void onConnected(Bundle bundle) {
-                                com.example.mun.ruok.logger.Log.i(TAG, "Connected!!!");
+                                //com.example.mun.ruok.logger.Log.i(TAG, "Connected!!!");
                                 //myTextView.append("Connected\r\n");
                                 // Now you can make calls to the Fitness APIs.
                                 // Put application specific code here.
@@ -278,15 +260,19 @@ public class SensorService extends Service {
                     public void onResult(DataSourcesResult dataSourcesResult) {
                         Log.i(TAG, "Result: " + dataSourcesResult.getStatus().toString());
                         for (DataSource dataSource : dataSourcesResult.getDataSources()) {
-                            Log.i(TAG, "Data source found: " + dataSource.toString());
+                            Log.i(TAG, "Data source found: " + dataSource.getName());
                             Log.i(TAG, "Data Source type: " + dataSource.getDataType().getName());
 
-                            //Let's register a listener to receive Activity data!
-                            if (dataSource.getDataType().equals(DataType.TYPE_HEART_RATE_BPM)
-                                    && mListener == null) {
-                                Log.i(TAG, "Data source for TYPE_HEART_RATE_BPM found!  Registering.");
-                                registerFitnessDataListener(dataSource,
-                                        DataType.TYPE_HEART_RATE_BPM);
+                            try {
+                                //Let's register a listener to receive Activity data!
+                                if (dataSource.getDataType().equals(DataType.TYPE_HEART_RATE_BPM) && dataSource.getName().equals("SWR12- heart rate bpm")
+                                        && mListener == null) {
+                                    Log.i(TAG, "Data source for TYPE_HEART_RATE_BPM found!  Registering.");
+                                    registerFitnessDataListener(dataSource,
+                                            DataType.TYPE_HEART_RATE_BPM);
+                                }
+                            }
+                            catch (Exception e) {
                             }
                         }
                     }
@@ -389,8 +375,8 @@ public class SensorService extends Service {
                     currentdate = String.format("%d-%d-%d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DATE));
                 }
 
-                databaseReference.child(userid + "-RealTimeHeart").setValue(heartDTO);
-                databaseReference.child(userid + "-History").child(currentdate).push().setValue(heartDTO);
+                databaseReference.child("RealTime").child("RUOK-" + account).setValue(heartDTO);
+                databaseReference.child("History").child("RUOK-" + account).child(currentdate).push().setValue(heartDTO);
 
                 if(!fit_mode) {
                     if(hr > max_heart_rate || hr < min_heart_rate) {
@@ -431,7 +417,7 @@ public class SensorService extends Service {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
         Date date = new Date(now);
 
-        heartDTO.account = account;
+        //heartDTO.account = account;
         heartDTO.HR = hr;
         heartDTO.TS = dateFormat.format(date);
         heartDTO.LAT = lat;
@@ -485,21 +471,35 @@ public class SensorService extends Service {
         }
     }
 
-    void checkConnection() {
+    private void checkConnection() {
         databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
 
+                CONNECTING_STATE = connectDTO.CONNECTING_CODE;
+                CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
+                //Log.d(TAG, connectDTO.ConnectionWith);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void LoadDataonFirebase() {
+        databaseReference.child("Users").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
+
                 try {
-                    CONNECTING_STATE = connectDTO.CONNECTING_CODE;
-                    Log.d(TAG, connectDTO.ConnectionWith);
+                    min_heart_rate = userDTO.min_heart_rate;
+                    max_heart_rate = userDTO.max_heart_rate;
                 } catch (Exception e) {
-                    connectDTO = new ConnectDTO();
-                    connectDTO.ConnectionWith = "연결 없음";
-                    connectDTO.CONNECTING_CODE = DEFAULT_CODE;
-                    databaseReference.child("Connection").child(account).setValue(connectDTO);
-                    Log.d(TAG,"데이터베이스 생성");
+                    Log.d(TAG,"데이터 로드 실패");
                 }
             }
 

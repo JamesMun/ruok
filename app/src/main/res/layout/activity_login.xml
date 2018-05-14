@@ -7,7 +7,7 @@
     android:background="@drawable/login_background"
     android:orientation="vertical"
     android:weightSum="4"
-    tools:context=".LoginActivity">
+    tools:context=".Activity.LoginActivity">
 
 
     <LinearLayout

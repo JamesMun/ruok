@@ -1,4 +1,4 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Fragment;
 
 import android.app.DatePickerDialog;
 import android.graphics.Color;
@@ -13,8 +13,11 @@ import android.widget.DatePicker;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.mun.ruok.ChartAxisSetting.MyXAxisValueFormatter;
-import com.example.mun.ruok.logger.Log;
+import com.example.mun.ruok.DTO.HeartDTO;
+import com.example.mun.ruok.House;
+import com.example.mun.ruok.Activity.MainActivity;
+import com.example.mun.ruok.R;
+import com.example.mun.ruok.Service.SensorService;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.XAxis;
@@ -24,7 +27,6 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -32,7 +34,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -70,6 +71,7 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
     private String str[];
 
     private int count, markercount;
+    private String account = SensorService.account;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -104,7 +106,7 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                         final ArrayList<String> labels = new ArrayList<String>();
 
                         date_of_history = String.format("%d-%d-%d",year,month+1,dayOfMonth);
-                        databaseReference.child(SensorService.userid + "-History").child(date_of_history).orderByChild("TS").addListenerForSingleValueEvent(new ValueEventListener() {
+                        databaseReference.child("History").child("RUOK-" + account).child(date_of_history).orderByChild("TS").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 try {

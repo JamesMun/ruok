@@ -1,9 +1,11 @@
-package com.example.mun.ruok;
+package com.example.mun.ruok.Activity;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+
+import com.example.mun.ruok.R;
 
 public class SplashScreen extends AppCompatActivity {
 
