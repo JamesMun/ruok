@@ -149,6 +149,11 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this,SensorService.class);
             startService(intent);
             Log.d(TAG,"ServiceStart");
+        } else if(SensorService.mListener == null) {
+            stopSensorService();
+            Intent intent = new Intent(this,SensorService.class);
+            startService(intent);
+            Log.d(TAG,"ServiceStart");
         }
     }
 

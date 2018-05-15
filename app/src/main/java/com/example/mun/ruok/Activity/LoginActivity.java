@@ -168,31 +168,46 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void makeDBonFirebase(GoogleSignInAccount account) {
-        String email = account.getEmail();
+        final String email = account.getEmail();
 
-        if(UserType == 0) {
-            UserDTO userData = new UserDTO();
-            userData.userEmailID = email.substring(0, email.indexOf('@'));
-            userData.fcmToken = FirebaseInstanceId.getInstance().getToken();
-            userData.max_heart_rate = 120;
-            userData.min_heart_rate = 60;
-            userData.userType = UserType;
+        databaseReference.child("Users").child(email.substring(0, email.indexOf('@'))).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                try {
+                    UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
+                    Log.d(TAG, userDTO.userEmailID);
+                } catch (Exception e) {
+                    if (UserType == 0) {
+                        UserDTO userData = new UserDTO();
+                        userData.userEmailID = email.substring(0, email.indexOf('@'));
+                        userData.fcmToken = FirebaseInstanceId.getInstance().getToken();
+                        userData.max_heart_rate = 120;
+                        userData.min_heart_rate = 60;
+                        userData.userType = UserType;
 
-            databaseReference.child("Users").child(userData.userEmailID).setValue(userData);
-        } else {
-            GuardianDTO guardianDTO = new GuardianDTO();
-            guardianDTO.userEmailID = email.substring(0, email.indexOf('@'));
-            guardianDTO.fcmToken = FirebaseInstanceId.getInstance().getToken();
-            guardianDTO.userType = UserType;
+                        databaseReference.child("Users").child(userData.userEmailID).setValue(userData);
+                    } else {
+                        GuardianDTO guardianDTO = new GuardianDTO();
+                        guardianDTO.userEmailID = email.substring(0, email.indexOf('@'));
+                        guardianDTO.fcmToken = FirebaseInstanceId.getInstance().getToken();
+                        guardianDTO.userType = UserType;
 
-            databaseReference.child("Users").child(guardianDTO.userEmailID).setValue(guardianDTO);
-        }
+                        databaseReference.child("Users").child(guardianDTO.userEmailID).setValue(guardianDTO);
+                    }
 
-        ConnectDTO connectDTO = new ConnectDTO();
-        connectDTO.ConnectionWith = "연결 없음";
-        connectDTO.CONNECTING_CODE = DEFAULT_CODE;
+                    ConnectDTO connectDTO = new ConnectDTO();
+                    connectDTO.ConnectionWith = "연결 없음";
+                    connectDTO.CONNECTING_CODE = DEFAULT_CODE;
 
-        databaseReference.child("Connection").child(email.substring(0, email.indexOf('@'))).setValue(connectDTO);
+                    databaseReference.child("Connection").child(email.substring(0, email.indexOf('@'))).setValue(connectDTO);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     @Override

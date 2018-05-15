@@ -1,6 +1,7 @@
 package com.example.mun.ruok.Service;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -75,7 +76,7 @@ public class SensorService extends Service {
     // [START mListener_variable_reference]
     // Need to hold a reference to this listener, as it's passed into the "unregister"
     // method in order to stop all sensors from sending data to this listener.
-    private OnDataPointListener mListener;
+    public static OnDataPointListener mListener;
     // [END mListener_variable_reference]
 
     public static int heart_count = 0;
@@ -97,11 +98,9 @@ public class SensorService extends Service {
     private Double lat;
     private Double lon;
 
-    public static HeartSQLiteHelper HRsqlhelper = new HeartSQLiteHelper();
-    private UserSQLiteHelper Usersqlhelper = new UserSQLiteHelper();
-    private FitSQLiteHelper Fitsqlhelper = new FitSQLiteHelper();
-
     private String Today,currentdate;
+
+    private  ProgressDialog pd;
 
 
     public SensorService() {
@@ -118,16 +117,7 @@ public class SensorService extends Service {
         super.onCreate();
 
         account = MainActivity.account;
-        UserType = MainActivity.UserType;
-
-        checkConnection();  // 계정 간 연결 상태 확인
-
-        if(UserType == 0) { // 사용자인 경우에만
-            LoadDataonFirebase(); // 서버에서 데이터 로드
-        }
-
         Log.d(TAG, "onCreate() 호출됨.");
-        Log.d(TAG, "유저타입 : " + UserType);
     }
 
     @Override
@@ -138,29 +128,79 @@ public class SensorService extends Service {
         if(intent == null) {
             return Service.START_STICKY;
         } else {
-            if(UserType == 0) {
-                StartLocationService();
-                processCommand(intent);
-            } else if(UserType == 1) {
-                if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
-                    databaseReference.child("RealTime").child(CONNECTING_ACCOUNT).addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            heartDTO = dataSnapshot.getValue(HeartDTO.class);
-                            Fragment_TabMain.heart_rate_value = heartDTO.HR;
-                            Fragment_TabMain.heart_time = heartDTO.TS;
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-
-                        }
-                    });
-                }
-            }
+            pd = ProgressDialog.show(MainActivity.UserActContext, "로딩중", "데이터를 로딩중 입니다....",true, true);
+            checkConnection(intent);  // 계정 간 연결 상태 확인
         }
 
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void checkConnection(final Intent intent) {
+        databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
+
+                CONNECTING_STATE = connectDTO.CONNECTING_CODE;
+                CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
+                //Log.d(TAG, connectDTO.ConnectionWith);
+
+                LoadDataOnFirebase(intent);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void LoadDataOnFirebase(final Intent intent) {
+        databaseReference.child("Users").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
+                UserType = userDTO.userType;
+
+                if(UserType == 0) {
+                    try {
+                        min_heart_rate = userDTO.min_heart_rate;
+                        max_heart_rate = userDTO.max_heart_rate;
+                        StartLocationService();
+                        processCommand(intent);
+                    } catch (Exception e) {
+                        Log.d(TAG, "데이터 로드 실패");
+                    }
+                } else if(UserType == 1) {
+                    if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
+
+                        databaseReference.child("RealTime").child(CONNECTING_ACCOUNT).addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                try {
+                                    heartDTO = dataSnapshot.getValue(HeartDTO.class);
+                                    Fragment_TabMain.heart_rate_value = heartDTO.HR;
+                                    Fragment_TabMain.heart_time = heartDTO.TS;
+                                } catch (Exception e) {
+                                    Log.d(TAG,"연결 끊김");
+                                }
+                                pd.dismiss();
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     public void processCommand(Intent intent) {
@@ -366,7 +406,7 @@ public class SensorService extends Service {
             if(conn_state) {
                 setHeartData();
 
-                Fragment_TabMain.heart_rate_value = heartDTO.HR;
+                Fragment_TabMain.heart_rate_value = hr;
                 Fragment_TabMain.heart_time = heartDTO.TS;
 
                 final Calendar cal = Calendar.getInstance();
@@ -469,44 +509,5 @@ public class SensorService extends Service {
         } catch (SecurityException e) {
             e.printStackTrace();
         }
-    }
-
-    private void checkConnection() {
-        databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
-
-                CONNECTING_STATE = connectDTO.CONNECTING_CODE;
-                CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
-                //Log.d(TAG, connectDTO.ConnectionWith);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    private void LoadDataonFirebase() {
-        databaseReference.child("Users").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
-
-                try {
-                    min_heart_rate = userDTO.min_heart_rate;
-                    max_heart_rate = userDTO.max_heart_rate;
-                } catch (Exception e) {
-                    Log.d(TAG,"데이터 로드 실패");
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
     }
 }

@@ -67,6 +67,8 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
 
     private ArrayList<LatLng> marker = new ArrayList<>();
 
+    private static final int CONNECTING_PERMISSION_CODE = 2;
+
     private String date_of_history;
     private String str[];
 
@@ -82,6 +84,12 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         rootView = (ViewGroup) inflater.inflate(R.layout.fragment_history, container, false);
+
+        if(SensorService.CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
+            account = SensorService.CONNECTING_ACCOUNT;
+        } else {
+            account = SensorService.account;
+        }
 
         return rootView;
     }

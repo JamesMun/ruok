@@ -101,6 +101,7 @@ public class SettingFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if(position == 0) {
+                    UserActContext.stopSensorService();
                     signOut();
                 }
                 else if(position == 1) {
@@ -238,6 +239,9 @@ public class SettingFragment extends Fragment {
                                     connectDTO.CONNECTING_CODE = CODE;
 
                                     databaseReference.child("Connection").child(account).setValue(connectDTO);
+
+                                    connectDTO.ConnectionWith = account;
+                                    databaseReference.child("Connection").child(USER).setValue(connectDTO);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
