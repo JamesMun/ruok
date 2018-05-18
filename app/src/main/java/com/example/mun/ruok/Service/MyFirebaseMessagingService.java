@@ -37,24 +37,11 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
 
         if(CONNECTING_CODE == REQUEST_CONNECTING_CODE) {
             sendNotification("연결 요청",from + "님이 연결을 요청하셨습니다.");
-
-            setConnectingCode(from, REQUEST_CONNECTING_CODE);
         } else if(CONNECTING_CODE == CONNECTING_PERMISSION_CODE) {
             sendNotification("연결 승인",from + "님이 연결을 승인하셨습니다.");
-
-            setConnectingCode(from, CONNECTING_PERMISSION_CODE);
+        } else if(CONNECTING_CODE == DEFAULT_CODE) {
+            sendNotification("연결 해제",from + "님이 연결을 해제하셨습니다.");
         }
-    }
-
-    void setConnectingCode(String from, int CODE) {
-        ConnectDTO connectDTO = new ConnectDTO();
-
-        connectDTO.ConnectionWith = from;
-        connectDTO.CONNECTING_CODE = CODE;
-
-        databaseReference.child("Connection").child(SensorService.account).setValue(connectDTO);
-
-        SensorService.CONNECTING_STATE = CODE;
     }
 
     private void sendNotification(String title, String content) {

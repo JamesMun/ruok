@@ -196,7 +196,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                     }
 
                     ConnectDTO connectDTO = new ConnectDTO();
-                    connectDTO.ConnectionWith = "연결 없음";
+                    connectDTO.ConnectionWith = "연결 해제";
                     connectDTO.CONNECTING_CODE = DEFAULT_CODE;
 
                     databaseReference.child("Connection").child(email.substring(0, email.indexOf('@'))).setValue(connectDTO);

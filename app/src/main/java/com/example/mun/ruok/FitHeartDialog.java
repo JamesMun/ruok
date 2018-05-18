@@ -9,15 +9,19 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.mun.ruok.Activity.MainActivity;
+import com.example.mun.ruok.DTO.FitDTO;
+import com.example.mun.ruok.Fragment.SettingFragment;
 import com.example.mun.ruok.Service.SensorService;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import static com.example.mun.ruok.Activity.MainActivity.account;
 
 /**
  * Created by Administrator on 2017-08-07.
  */
 
-public class HeartDialog {
+public class FitHeartDialog {
 
     private Context context;
     private String TAG = "HeartDialog";
@@ -26,7 +30,7 @@ public class HeartDialog {
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
-    public HeartDialog(Context context) {
+    public FitHeartDialog(Context context) {
         this.context = context;
     }
 
@@ -51,8 +55,8 @@ public class HeartDialog {
         final EditText maxhredit = (EditText)dlg.findViewById(R.id.maxheartrate);
         final EditText minhredit = (EditText)dlg.findViewById(R.id.minheartrate);
 
-        maxhredit.setText(String.valueOf(SensorService.max_heart_rate));
-        minhredit.setText(String.valueOf(SensorService.min_heart_rate));
+        maxhredit.setText(String.valueOf(SensorService.fit_max_heart_rate));
+        minhredit.setText(String.valueOf(SensorService.fit_min_heart_rate));
 
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,11 +74,14 @@ public class HeartDialog {
                 minhr = Integer.parseInt(str);
 
                 if(maxhr > minhr) {
-                    databaseReference.child("Users").child(account).child("max_heart_rate").setValue(maxhr);
-                    databaseReference.child("Users").child(account).child("min_heart_rate").setValue(minhr);
 
-                    SensorService.max_heart_rate = maxhr;
-                    SensorService.min_heart_rate = minhr;
+                    FitDTO fitDTO = new FitDTO();
+                    fitDTO.Fit_minute = SettingFragment.fitMinute;
+                    fitDTO.Fit_hour = SettingFragment.fitHour;
+                    fitDTO.Fit_max_heart_rate = maxhr;
+                    fitDTO.Fit_min_heart_rate = minhr;
+
+                    databaseReference.child("Fitness").child(account).setValue(fitDTO);
 
                     Log.d(TAG, "데이터 저장 성공");
 

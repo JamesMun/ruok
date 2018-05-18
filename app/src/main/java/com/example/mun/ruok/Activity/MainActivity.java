@@ -37,9 +37,6 @@ public class MainActivity extends AppCompatActivity {
 
     public static MainActivity UserActContext;
     public static Activity UserActivity;
-    public static int UserType;
-
-    public static SQLiteDatabase db;
 
     public static String account;
 
@@ -55,12 +52,11 @@ public class MainActivity extends AppCompatActivity {
 
         tabMake();
         getUserInfo();
-        DBservice();
 
         UserActContext = this;
         UserActivity = this;
 
-        if(Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED
+        if(Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED  //권한 설정 확인
                 ||   ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 ||   ContextCompat.checkSelfPermission( this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED
                 ||   ContextCompat.checkSelfPermission( this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
@@ -145,14 +141,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startRUOK() {
-        if(!isServiceRunning()) {
+        if(!isServiceRunning()) {   // 서비스가 켜져있지 않은 경우
             Intent intent = new Intent(this,SensorService.class);
-            startService(intent);
+            startService(intent);   // 서비스 실행
             Log.d(TAG,"ServiceStart");
-        } else if(SensorService.mListener == null) {
-            stopSensorService();
+        } else if(SensorService.mListener == null) { // 서비스는 켜져 있으나 리스너가 등록이 되지 않은 경우
+            stopSensorService();    // 서비스 중지
             Intent intent = new Intent(this,SensorService.class);
-            startService(intent);
+            startService(intent);   // 서비스 재실행
             Log.d(TAG,"ServiceStart");
         }
     }
@@ -169,24 +165,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void stopSensorService() {
+    public void stopSensorService() {   // 서비스 중지
         Intent intent = new Intent(this, SensorService.class);
         stopService(intent);
         Log.d(TAG,"ServiceStop");
     }
 
-    private void getUserInfo() {
+    private void getUserInfo() {    // 로그인 액티비티에서 보낸 account 값 저장 함수
         Intent intent = getIntent();
         account = intent.getExtras().getString("account");    // 로그인 결과로 넘어온 유저 계정
-        //UserType = intent.getExtras().getInt("usertype");
         //Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
     }
 
-    private void DBservice() {
-        db = openOrCreateDatabase("RUOK", Context.MODE_PRIVATE, null);
-    }
-
-    private void tabMake() {
+    private void tabMake() {    // 메인 액티비티에 사용되는 탭 생성
 
         tabFragment = new Fragment_TabMain();
         settingFragment = new SettingFragment();
@@ -194,39 +185,36 @@ public class MainActivity extends AppCompatActivity {
 
         android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
-        ft.replace(R.id.content_fragment_layout, tabFragment);
+        ft.replace(R.id.content_fragment_layout, tabFragment);  // 맨 처음 시작시 실행되는 프래그먼트 지정
         ft.commit();
 
         TabLayout tabs = (TabLayout) findViewById(R.id.tabs);
-        /*tabs.addTab(tabs.newTab().setText("Home"));
-        tabs.addTab(tabs.newTab().setText("History"));
-        tabs.addTab(tabs.newTab().setText("Alarm"));
-        tabs.addTab(tabs.newTab().setText("Settings"));*/
-        tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_home));
+
+        tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_home));   // 각 탭에 해당하는 아이콘 지정
         tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_history));
         tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_alarm));
         tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_setting));
-        tabs.setTabGravity(TabLayout.GRAVITY_FILL);
+        tabs.setTabGravity(TabLayout.GRAVITY_FILL); // 탭을 아래쪽으로 위치시킴
 
-        tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+        tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {   // 탭 선택 시 발생 이벤트
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                int position = tab.getPosition();
+                int position = tab.getPosition();   // 선택된 탭 포지션 확인
 
                 Fragment selected = null;
                 if(position == 0) {
-                    selected = tabFragment;
+                    selected = tabFragment; // 첫번째 탭 선택시 메인 프래그먼트
                 } else if(position == 1) {
-                    selected = historyFragment;
+                    selected = historyFragment; // 두번째 탭 선택시 히스토리 프래그먼트
                 } else if(position == 2) {
-                    selected = settingFragment;
+                    selected = settingFragment; // 세번째 탭 선택시 알람 프래그먼트
                 } else if(position == 3) {
-                    selected = settingFragment;
+                    selected = settingFragment; // 네번재 탭 선택시 셋팅 프래그먼트
                 }
 
-                android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction(); // 프래그먼트 트랜잭션 실행
 
-                ft.replace(R.id.content_fragment_layout, selected);
+                ft.replace(R.id.content_fragment_layout, selected); // 선택된 프래그먼트 실행
                 ft.commit();
             }
 
@@ -244,13 +232,11 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean isServiceRunning()
     {
-        ActivityManager manager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);
+        ActivityManager manager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);   // 현재 액티비티에서 실행되어있는 모든 서비스 목록 저장
 
-        Intent intent = new Intent(this,SensorService.class);
-
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))    // 실행된 서비스의 수만큼 반복
         {
-            if ("com.example.mun.ruok.Service.SensorService".equals(service.service.getClassName())) {
+            if ("com.example.mun.ruok.Service.SensorService".equals(service.service.getClassName())) {  // 해당되는 서비스 이름과 동일한 이름의 서비스가 실행되고 있을 시 트루 값 리턴
                 return true;
             }
         }

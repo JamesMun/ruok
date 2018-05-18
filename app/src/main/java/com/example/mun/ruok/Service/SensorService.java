@@ -15,6 +15,7 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.mun.ruok.Activity.AlertActivity;
 import com.example.mun.ruok.Activity.MainActivity;
@@ -71,6 +72,8 @@ public class SensorService extends Service {
 
     public static int max_heart_rate = 120;
     public static int min_heart_rate = 50;
+    public static int fit_max_heart_rate = 140;
+    public static int fit_min_heart_rate = 50;
     public static boolean conn_state = false;
 
     // [START mListener_variable_reference]
@@ -143,7 +146,8 @@ public class SensorService extends Service {
 
                 CONNECTING_STATE = connectDTO.CONNECTING_CODE;
                 CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
-                //Log.d(TAG, connectDTO.ConnectionWith);
+                Log.d(TAG, connectDTO.ConnectionWith);
+                Log.d(TAG, String.valueOf(connectDTO.CONNECTING_CODE));
 
                 LoadDataOnFirebase(intent);
             }
@@ -161,6 +165,7 @@ public class SensorService extends Service {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
                 UserType = userDTO.userType;
+                //Log.d(TAG, String.valueOf(userDTO.userType));
 
                 if(UserType == 0) {
                     try {
@@ -168,6 +173,7 @@ public class SensorService extends Service {
                         max_heart_rate = userDTO.max_heart_rate;
                         StartLocationService();
                         processCommand(intent);
+                        pd.dismiss();
                     } catch (Exception e) {
                         Log.d(TAG, "데이터 로드 실패");
                     }
@@ -192,6 +198,9 @@ public class SensorService extends Service {
 
                             }
                         });
+                    } else {
+                        pd.dismiss();
+                        Toast.makeText(MainActivity.UserActContext,"연결 대상이 없습니다.", Toast.LENGTH_SHORT).show();
                     }
                 }
             }

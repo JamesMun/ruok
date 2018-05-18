@@ -5,6 +5,7 @@ import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.hardware.Sensor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -19,8 +20,10 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.example.mun.ruok.DTO.ConnectDTO;
+import com.example.mun.ruok.DTO.FitDTO;
 import com.example.mun.ruok.DTO.UserDTO;
 import com.example.mun.ruok.Database.FitSQLiteHelper;
+import com.example.mun.ruok.FitHeartDialog;
 import com.example.mun.ruok.HeartDialog;
 import com.example.mun.ruok.Activity.LoginActivity;
 import com.example.mun.ruok.Activity.MainActivity;
@@ -43,7 +46,9 @@ import java.net.URL;
 
 import static com.example.mun.ruok.Activity.MainActivity.UserActContext;
 import static com.example.mun.ruok.Activity.MainActivity.account;
+import static com.example.mun.ruok.Service.SensorService.CONNECTING_ACCOUNT;
 import static com.example.mun.ruok.Service.SensorService.CONNECTING_STATE;
+import static com.example.mun.ruok.Service.SensorService.UserType;
 
 public class SettingFragment extends Fragment {
 
@@ -54,8 +59,6 @@ public class SettingFragment extends Fragment {
     private static final int CONNECTING_PERMISSION_CODE = 2;
 
     private ViewGroup rootView;
-
-    public static int maxhr, minhr;
 
     public static int fitHour=0, fitMinute=0;
 
@@ -78,9 +81,15 @@ public class SettingFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview);
 
         if(CONNECTING_STATE == REQUEST_CONNECTING_CODE) {
-            values[4] = "연결 요청 취소";
+            if(UserType == 0) {
+                values[4] = "연결 승인";
+            } else {
+                values[4] = "연결 취소";
+            }
         } else if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
             values[4] = "연결 해제";
+        } else {
+            values[4] = "연결";
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, values)
@@ -115,30 +124,37 @@ public class SettingFragment extends Fragment {
                     setFitnessTime();
                 }
                 else if(position == 4) {
-                    if(SensorService.UserType == 1) {
-                        if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
-                            // 연결 해제
+                    if (CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {   // 연결이 되어 있을 경우 유저 타입에 상관없이 연결 해제 가능
+                        CONNECTING_STATE = DEFAULT_CODE;
+                        sendPostToFCM(SensorService.CONNECTING_ACCOUNT, DEFAULT_CODE);// 연결 해제
+                        Toast.makeText(MainActivity.UserActContext, "연결이 해제 되었습니다.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        if (SensorService.UserType == 1) {
+                            if (CONNECTING_STATE == DEFAULT_CODE) {
+                                SendPermissionRequest();    // 연결 요청 메시지 보내기
+                            } else if(CONNECTING_STATE == REQUEST_CONNECTING_CODE) {
+                                sendPostToFCM(CONNECTING_ACCOUNT, DEFAULT_CODE);
+                                Toast.makeText(MainActivity.UserActContext, "연결을 취소 하셨습니다.", Toast.LENGTH_SHORT).show();
+                            }
                         } else {
-                            SendPermissionRequest();    // 연결 요청 메시지 보내기
-                        }
-                    }
-                    else {
-                        if(CONNECTING_STATE == DEFAULT_CODE) {
-                            //SendPermissionRequest();    // 연결 요청 메시지 보내기
-                            Toast.makeText(MainActivity.UserActContext,"사용자는 연결을 요청 할 수 없습니다.", Toast.LENGTH_SHORT).show();
-                        } else if(CONNECTING_STATE == REQUEST_CONNECTING_CODE){
-                            databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
-                                    sendPostToFCM(connectDTO.ConnectionWith, CONNECTING_PERMISSION_CODE);
-                                }
+                            if (CONNECTING_STATE == DEFAULT_CODE) {
+                                //SendPermissionRequest();    // 연결 요청 메시지 보내기
+                                Toast.makeText(MainActivity.UserActContext, "사용자는 연결을 요청 할 수 없습니다.", Toast.LENGTH_SHORT).show();
+                            } else if (CONNECTING_STATE == REQUEST_CONNECTING_CODE) {
+                                databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(DataSnapshot dataSnapshot) {
+                                        ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
+                                        sendPostToFCM(connectDTO.ConnectionWith, CONNECTING_PERMISSION_CODE);
+                                    }
 
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
+                                    @Override
+                                    public void onCancelled(DatabaseError databaseError) {
 
-                                }
-                            });
+                                    }
+                                });
+                                Toast.makeText(MainActivity.UserActContext, "연결을 승인 하셨습니다.", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     }
                 }
@@ -172,7 +188,9 @@ public class SettingFragment extends Fragment {
             public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
                 fitHour = hourOfDay;
                 fitMinute = minute;
-                Fitsqlhelper.insertData(MainActivity.db, fitHour, fitMinute);
+
+                FitHeartDialog fitheartDialog = new FitHeartDialog(getContext());
+                fitheartDialog.callFunction();
             }
         };
 
@@ -235,15 +253,27 @@ public class SettingFragment extends Fragment {
                                     conn.getResponseCode();
 
                                     ConnectDTO connectDTO = new ConnectDTO();
-                                    connectDTO.ConnectionWith = USER;
-                                    connectDTO.CONNECTING_CODE = CODE;
+                                    if(CODE == DEFAULT_CODE) {
+                                        connectDTO.ConnectionWith = "연결 해제";
+                                        connectDTO.CONNECTING_CODE = CODE;
 
-                                    databaseReference.child("Connection").child(account).setValue(connectDTO);
+                                        databaseReference.child("Connection").child(account).setValue(connectDTO);
+                                        databaseReference.child("Connection").child(USER).setValue(connectDTO);
+                                    } else {
+                                        connectDTO.ConnectionWith = USER;
+                                        connectDTO.CONNECTING_CODE = CODE;
 
-                                    connectDTO.ConnectionWith = account;
-                                    databaseReference.child("Connection").child(USER).setValue(connectDTO);
+                                        databaseReference.child("Connection").child(account).setValue(connectDTO);
+
+                                        connectDTO.ConnectionWith = account;
+                                        databaseReference.child("Connection").child(USER).setValue(connectDTO);
+                                    }
+
+                                    CONNECTING_STATE = CODE;
+
                                 } catch (Exception e) {
                                     e.printStackTrace();
+                                    //Toast.makeText(MainActivity.UserActContext, "해당 계정이 존재하지 않습니다.", Toast.LENGTH_SHORT).show();
                                 }
                             }
                         }).start();
