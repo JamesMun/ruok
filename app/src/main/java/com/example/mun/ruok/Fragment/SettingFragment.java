@@ -5,8 +5,9 @@ import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.hardware.Sensor;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,18 +16,19 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.example.mun.ruok.DTO.ConnectDTO;
-import com.example.mun.ruok.DTO.FitDTO;
 import com.example.mun.ruok.DTO.UserDTO;
 import com.example.mun.ruok.Database.FitSQLiteHelper;
 import com.example.mun.ruok.FitHeartDialog;
 import com.example.mun.ruok.HeartDialog;
 import com.example.mun.ruok.Activity.LoginActivity;
 import com.example.mun.ruok.Activity.MainActivity;
+import com.example.mun.ruok.ListViewAdapter;
 import com.example.mun.ruok.R;
 import com.example.mun.ruok.Service.SensorService;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -92,7 +94,7 @@ public class SettingFragment extends Fragment {
             values[4] = "연결";
         }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, values)
+        /*ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, values)
         {
             @Override
             public View getView(int position, View convertView, ViewGroup parent)
@@ -100,11 +102,16 @@ public class SettingFragment extends Fragment {
                 View view = super.getView(position, convertView, parent);
                 TextView textView = (TextView) view.findViewById(android.R.id.text1);
                 textView.setTextColor(Color.BLACK);
+
+                android.support.v7.widget.SwitchCompat switchCompat = (android.support.v7.widget.SwitchCompat) view.findViewById(R.id.fit_switch);
+
                 return view;
             }
-        };
+        };*/
 
+        ListViewAdapter adapter = new ListViewAdapter(MainActivity.UserActContext, R.layout.listview_item, values);
         listView.setAdapter(adapter);
+        listView.setClickable(true);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override

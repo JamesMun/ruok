@@ -12,6 +12,7 @@ import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import com.example.mun.ruok.DTO.ConnectDTO;
+import com.example.mun.ruok.DTO.FitDTO;
 import com.example.mun.ruok.DTO.GuardianDTO;
 import com.example.mun.ruok.DTO.UserDTO;
 import com.example.mun.ruok.Database.UserSQLiteHelper;
@@ -186,6 +187,14 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         userData.userType = UserType;
 
                         databaseReference.child("Users").child(userData.userEmailID).setValue(userData);
+
+                        FitDTO fitDTO = new FitDTO();
+                        fitDTO.Fit_min_heart_rate = 60;
+                        fitDTO.Fit_max_heart_rate = 140;
+                        fitDTO.Fit_hour = 2;
+                        fitDTO.Fit_minute = 0;
+
+                        databaseReference.child("Fitness").child(userData.userEmailID).setValue(fitDTO);
                     } else {
                         GuardianDTO guardianDTO = new GuardianDTO();
                         guardianDTO.userEmailID = email.substring(0, email.indexOf('@'));

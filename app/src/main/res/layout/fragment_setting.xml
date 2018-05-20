@@ -8,12 +8,15 @@
     tools:context=".Fragment.SettingFragment">
 
     <ListView
+        android:id="@+id/listview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:divider="@android:drawable/divider_horizontal_bright"
         android:choiceMode="singleChoice"
-        android:listSelector="@drawable/item_ripple"
-        android:id="@+id/listview">
+        android:divider="@android:drawable/divider_horizontal_bright"
+        android:clickable="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:listSelector="@drawable/item_ripple">
 
     </ListView>
 
