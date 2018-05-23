@@ -43,8 +43,8 @@ public class FitSQLiteHelper {
         results.moveToFirst();
 
         while(!results.isAfterLast()){
-            SettingFragment.fitHour = results.getInt(1);
-            SettingFragment.fitMinute = results.getInt(2);
+            //SettingFragment.fitHour = results.getInt(1);
+            //SettingFragment.fitMinute = results.getInt(2);
             results.moveToNext();
         }
         results.close();

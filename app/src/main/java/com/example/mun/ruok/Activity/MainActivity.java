@@ -132,14 +132,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if(hasFocus) {
-            checkGPSService();
-        }
-    }
-
     public void startRUOK() {
         if(!isServiceRunning()) {   // 서비스가 켜져있지 않은 경우
             Intent intent = new Intent(this,SensorService.class);
@@ -149,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
             stopSensorService();    // 서비스 중지
             Intent intent = new Intent(this,SensorService.class);
             startService(intent);   // 서비스 재실행
-            Log.d(TAG,"ServiceStart");
+            Log.d(TAG,"ServiceReStart");
         }
     }
 

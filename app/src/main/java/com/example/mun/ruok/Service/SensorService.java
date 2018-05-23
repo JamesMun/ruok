@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.NonNull;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 import com.example.mun.ruok.Activity.AlertActivity;
 import com.example.mun.ruok.Activity.MainActivity;
 import com.example.mun.ruok.DTO.ConnectDTO;
+import com.example.mun.ruok.DTO.FitDTO;
 import com.example.mun.ruok.DTO.HeartDTO;
 import com.example.mun.ruok.DTO.UserDTO;
 import com.example.mun.ruok.Fragment.Fragment_TabMain;
@@ -48,6 +50,8 @@ import com.google.firebase.database.ValueEventListener;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import static android.location.LocationManager.GPS_PROVIDER;
@@ -65,43 +69,41 @@ public class SensorService extends Service {
     private GoogleApiClient mClient = null;
     private boolean authInProgress = false;
 
-    private int hr = 0;
+    private int mHeartRate = 0;
 
-    public static int max_heart_rate = 120;
-    public static int min_heart_rate = 50;
-    public static int fit_max_heart_rate = 140;
-    public static int fit_min_heart_rate = 50;
-    public static boolean conn_state = false;
+    public static UserDTO sUserData;
+    public static FitDTO sFitData;
+    public static ConnectDTO sConnData;
 
     // [START mListener_variable_reference]
     // Need to hold a reference to this listener, as it's passed into the "unregister"
     // method in order to stop all sensors from sending data to this listener.
-    public static OnDataPointListener mListener;
+    public static OnDataPointListener mListener = null;
     // [END mListener_variable_reference]
 
-    public static int heart_count = 0;
-    public static Thread heartThread;
-    public static int CONNECTING_STATE;
-    public static String CONNECTING_ACCOUNT;
+    public static int sHeart_Count = 0;
+    //public static int CONNECTING_STATE;
+    //public static String CONNECTING_ACCOUNT;
 
-    public boolean fit_mode = false;
-    public static boolean alert = false;
+    public static boolean sAlert = false;
+    public static boolean sFit_mode = false;
 
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
-    public static String userid, account;
-    public static int UserType;
+    public static String sAccount;
 
     private HeartDTO heartDTO = new HeartDTO();
 
     private Double lat;
     private Double lon;
 
-    private String Today,currentdate;
+    private String mCurrentDate;
 
-    private  ProgressDialog pd;
+    private ProgressDialog pd;
 
+    public static Timer timer;
+    public static TimerTask timerTask;
 
     public SensorService() {
     }
@@ -115,15 +117,15 @@ public class SensorService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
-        account = MainActivity.account;
-        Log.d(TAG, "onCreate() 호출됨.");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         Log.d(TAG, "onStartCommand() 호출됨.");
+
+        sAccount = MainActivity.account;
+        mListener = null;
 
         if(intent == null) {
             return Service.START_STICKY;
@@ -136,15 +138,15 @@ public class SensorService extends Service {
     }
 
     private void checkConnection(final Intent intent) {
-        databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.child("Connection").child(sAccount).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
+                sConnData = dataSnapshot.getValue(ConnectDTO.class);
 
-                CONNECTING_STATE = connectDTO.CONNECTING_CODE;
+                /*CONNECTING_STATE = connectDTO.CONNECTING_CODE;
                 CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
                 Log.d(TAG, connectDTO.ConnectionWith);
-                Log.d(TAG, String.valueOf(connectDTO.CONNECTING_CODE));
+                Log.d(TAG, String.valueOf(connectDTO.CONNECTING_CODE));*/
 
                 LoadDataOnFirebase(intent);
             }
@@ -157,33 +159,46 @@ public class SensorService extends Service {
     }
 
     private void LoadDataOnFirebase(final Intent intent) {
-        databaseReference.child("Users").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.child("Users").child(sAccount).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
-                UserType = userDTO.userType;
-                //Log.d(TAG, String.valueOf(userDTO.userType));
+                sUserData = dataSnapshot.getValue(UserDTO.class);
 
-                if(UserType == 0) {
+                Log.d(TAG, String.valueOf(sUserData.getUserType()));
+
+                if(sUserData.getUserType() == 0) {
                     try {
-                        min_heart_rate = userDTO.min_heart_rate;
-                        max_heart_rate = userDTO.max_heart_rate;
+                        databaseReference.child("Fitness").child(sAccount).addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                sFitData = dataSnapshot.getValue(FitDTO.class);
+                                Log.d(TAG,"운동시간 불러오기");
+                                Log.d(TAG,String.valueOf(sFitData.getFitHour()));
+                                Log.d(TAG,String.valueOf(sFitData.getFitMinute()));
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
                         StartLocationService();
                         processCommand(intent);
-                        pd.dismiss();
                     } catch (Exception e) {
                         Log.d(TAG, "데이터 로드 실패");
                     }
-                } else if(UserType == 1) {
-                    if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
+                    pd.dismiss();
+                } else if(sUserData.getUserType() == 1) {
+                    if(sConnData.getConnectingCode() == CONNECTING_PERMISSION_CODE) {
 
-                        databaseReference.child("RealTime").child(CONNECTING_ACCOUNT).addValueEventListener(new ValueEventListener() {
+                        databaseReference.child("RealTime").child("RUOK-" + sConnData.getConnectionWith()).addValueEventListener(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 try {
                                     heartDTO = dataSnapshot.getValue(HeartDTO.class);
                                     Fragment_TabMain.heart_rate_value = heartDTO.HR;
                                     Fragment_TabMain.heart_time = heartDTO.TS;
+                                    Fragment_TabMain.ShowMyLocaion(heartDTO.LAT, heartDTO.LON, Fragment_TabMain.map);
                                 } catch (Exception e) {
                                     Log.d(TAG,"연결 끊김");
                                 }
@@ -280,8 +295,6 @@ public class SensorService extends Service {
                 .build();
 
         mClient.connect();
-
-        startHeartCheckThread();
     }
 
     @Override
@@ -339,12 +352,12 @@ public class SensorService extends Service {
                 for (Field field : dataPoint.getDataType().getFields()) {
                     Value val = dataPoint.getValue(field);
                     Float heartrate = val.asFloat();
-                    hr = heartrate.intValue();
+                    mHeartRate = heartrate.intValue();
 
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
-                    //Log.i(TAG, "alert: " + alert);
-                    conn_state = true;
+
+                    ReceiveHeartData();
                 }
             }
         };
@@ -390,7 +403,6 @@ public class SensorService extends Service {
                     public void onResult(Status status) {
                         if (status.isSuccess()) {
                             Log.i(TAG, "Listener was removed!");
-                            conn_state = false;
                         } else {
                             Log.i(TAG, "Listener was not removed.");
                         }
@@ -399,72 +411,12 @@ public class SensorService extends Service {
         // [END unregister_data_listener]
     }
 
-    public void startHeartCheckThread() {
-        //작업스레드 생성(매듭 묶는과정)
-        SensorService.heartHandler heartRunnable = new SensorService.heartHandler();
-        heartThread = new Thread(heartRunnable);
-        heartThread.setDaemon(true);
-        heartThread.start();
-    }
-
-    android.os.Handler receivehearthandler = new android.os.Handler() {
-        public void handleMessage(Message msg) {
-            if(conn_state) {
-                setHeartData();
-
-                Fragment_TabMain.heart_rate_value = hr;
-                Fragment_TabMain.heart_time = heartDTO.TS;
-
-                final Calendar cal = Calendar.getInstance();
-
-                if(String.format("%d",cal.get(Calendar.DATE)) != Today) {
-                    currentdate = String.format("%d-%d-%d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DATE));
-                }
-
-                databaseReference.child("RealTime").child("RUOK-" + account).setValue(heartDTO);
-                databaseReference.child("History").child("RUOK-" + account).child(currentdate).push().setValue(heartDTO);
-
-                if(!fit_mode) {
-                    if(hr > max_heart_rate || hr < min_heart_rate) {
-                        heart_count++;
-                        if(heart_count > 5  && alert != true) {
-                            //heartThread.interrupt();
-                            alert = true;
-                            Intent intent = new Intent(getApplicationContext(),AlertActivity.class);
-                            startActivity(intent);
-                        }
-                    } else if(heart_count != 0) {
-                        heart_count = 0;
-                    }
-                }
-                conn_state = false;
-            }
-        }
-    };
-
-    public class heartHandler implements Runnable {
-        @Override
-        public void run() {
-            while (true) {
-                Message msg = Message.obtain();
-                msg.what = 0;
-                if(UserType == 0) {
-                    receivehearthandler.sendMessage(msg);
-                }
-                try {
-                    Thread.sleep(1000); // 갱신주기 1초
-                } catch (Exception e) {
-                }
-            }
-        }
-    }
     public void setHeartData() {
         long now = System.currentTimeMillis();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
         Date date = new Date(now);
 
-        //heartDTO.account = account;
-        heartDTO.HR = hr;
+        heartDTO.HR = mHeartRate;
         heartDTO.TS = dateFormat.format(date);
         heartDTO.LAT = lat;
         heartDTO.LON = lon;
@@ -476,6 +428,7 @@ public class SensorService extends Service {
         public void onLocationChanged(Location location) {
             lat = location.getLatitude();
             lon = location.getLongitude();
+            Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
         }
 
         @Override
@@ -488,6 +441,11 @@ public class SensorService extends Service {
 
         @Override
         public void onProviderDisabled(String s) {
+            lat = null;
+            lon = null;
+            Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            startActivity(intent);
         }
     }
 
@@ -515,5 +473,68 @@ public class SensorService extends Service {
         } catch (SecurityException e) {
             e.printStackTrace();
         }
+    }
+
+    private void ReceiveHeartData() {
+        setHeartData();
+
+        Fragment_TabMain.HeartRateText.setText(String.valueOf(mHeartRate));
+        Fragment_TabMain.HeartTimeText.setText(heartDTO.TS);
+
+        final Calendar cal = Calendar.getInstance();
+
+        mCurrentDate = String.format("%d-%d-%d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE));
+
+        if (lat != null && lon != null) {
+            databaseReference.child("RealTime").child("RUOK-" + sAccount).setValue(heartDTO);
+            databaseReference.child("History").child("RUOK-" + sAccount).child(mCurrentDate).push().setValue(heartDTO);
+        }
+
+        if (!sFit_mode) {
+            heartChecker(sUserData.getMaxHeartRate(), sUserData.getMinHeartRate());
+        } else {
+            heartChecker(sFitData.getFitMaxHeartRate(), sFitData.getFitMinHeartRate());
+            Log.d(TAG,"운동 모드 실행");
+        }
+    }
+
+    private void heartChecker(int max, int min) {
+        if (mHeartRate > max || mHeartRate < min) {
+            sHeart_Count++;
+            if (sHeart_Count > 5 && !sAlert) {
+                sAlert = true;
+                Intent intent = new Intent(getApplicationContext(), AlertActivity.class);
+                startActivity(intent);
+            }
+        } else if (sHeart_Count != 0) {
+            sHeart_Count = 0;
+        }
+    }
+
+    public static void fitStart() {
+
+        int time = sFitData.getFitHour() * 3600000 + sFitData.getFitMinute() * 60000;
+        Log.d(TAG,"운동 시간 : " + String.valueOf(time));
+
+        timer = new Timer(true);
+        timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                if(!sFit_mode) {
+                    sFit_mode = !sFit_mode;
+                } else if(sFit_mode) {
+                    sFit_mode = !sFit_mode;
+                    timer.cancel();
+                    Log.d(TAG,"운동 모드 종료");
+                }
+                Log.d(TAG,"운동 모드 : " + String.valueOf(sFit_mode));
+            }
+
+            @Override
+            public boolean cancel() {
+                return super.cancel();
+            }
+        };
+        timer.schedule(timerTask, 0, time);
     }
 }

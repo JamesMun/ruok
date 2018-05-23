@@ -12,16 +12,13 @@ import com.example.mun.ruok.Activity.MainActivity;
 import com.example.mun.ruok.Service.SensorService;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-/**
- * Created by Administrator on 2017-08-07.
- */
+import static com.example.mun.ruok.Service.SensorService.sUserData;
 
 public class HeartDialog {
 
     private Context context;
     private String TAG = "HeartDialog";
-    private String account = SensorService.account;
+    private String account = SensorService.sAccount;
 
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
@@ -51,8 +48,8 @@ public class HeartDialog {
         final EditText maxhredit = (EditText)dlg.findViewById(R.id.maxheartrate);
         final EditText minhredit = (EditText)dlg.findViewById(R.id.minheartrate);
 
-        maxhredit.setText(String.valueOf(SensorService.max_heart_rate));
-        minhredit.setText(String.valueOf(SensorService.min_heart_rate));
+        maxhredit.setText(String.valueOf(sUserData.getMaxHeartRate()));
+        minhredit.setText(String.valueOf(sUserData.getMinHeartRate()));
 
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,18 +60,17 @@ public class HeartDialog {
                 final int maxhr, minhr;
 
                 String str = maxhredit.getText().toString();
-                //SettingFragment.maxhr = Integer.parseInt(str);
                 maxhr = Integer.parseInt(str);
 
                 str = minhredit.getText().toString();
                 minhr = Integer.parseInt(str);
 
                 if(maxhr > minhr) {
-                    databaseReference.child("Users").child(account).child("max_heart_rate").setValue(maxhr);
-                    databaseReference.child("Users").child(account).child("min_heart_rate").setValue(minhr);
+                    databaseReference.child("Users").child(account).child("maxHeartRate").setValue(maxhr);
+                    databaseReference.child("Users").child(account).child("minHeartRate").setValue(minhr);
 
-                    SensorService.max_heart_rate = maxhr;
-                    SensorService.min_heart_rate = minhr;
+                    sUserData.setMaxHeartRate(maxhr);
+                    sUserData.setMinHeartRate(minhr);
 
                     Log.d(TAG, "데이터 저장 성공");
 

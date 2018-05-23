@@ -10,6 +10,10 @@ import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.mun.ruok.Service.SensorService;
+
+import static com.example.mun.ruok.Service.SensorService.sFit_mode;
+
 public class ListViewAdapter extends ArrayAdapter {
     Context context;
     int resource;
@@ -56,13 +60,21 @@ public class ListViewAdapter extends ArrayAdapter {
             switchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    if(isChecked) {
+                    if(isChecked && !sFit_mode) {
+                        SensorService.fitStart();
                         Toast.makeText(getContext(), "운동을 시작합니다.",Toast.LENGTH_SHORT).show();
-                    } else {
+                    } else if(!isChecked) {
+                        sFit_mode = false;
+                        SensorService.timer.cancel();
                         Toast.makeText(getContext(), "운동을 종료합니다.",Toast.LENGTH_SHORT).show();
                     }
                 }
             });
+            if(sFit_mode) {
+                switchCompat.setChecked(true);
+            } else {
+                switchCompat.setChecked(false);
+            }
         }
         return convertView;
     }

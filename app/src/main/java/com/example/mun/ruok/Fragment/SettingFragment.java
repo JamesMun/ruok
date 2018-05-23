@@ -4,33 +4,25 @@ import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Switch;
-import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.example.mun.ruok.DTO.ConnectDTO;
 import com.example.mun.ruok.DTO.UserDTO;
-import com.example.mun.ruok.Database.FitSQLiteHelper;
 import com.example.mun.ruok.FitHeartDialog;
 import com.example.mun.ruok.HeartDialog;
 import com.example.mun.ruok.Activity.LoginActivity;
 import com.example.mun.ruok.Activity.MainActivity;
 import com.example.mun.ruok.ListViewAdapter;
 import com.example.mun.ruok.R;
-import com.example.mun.ruok.Service.SensorService;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -48,9 +40,9 @@ import java.net.URL;
 
 import static com.example.mun.ruok.Activity.MainActivity.UserActContext;
 import static com.example.mun.ruok.Activity.MainActivity.account;
-import static com.example.mun.ruok.Service.SensorService.CONNECTING_ACCOUNT;
-import static com.example.mun.ruok.Service.SensorService.CONNECTING_STATE;
-import static com.example.mun.ruok.Service.SensorService.UserType;
+import static com.example.mun.ruok.Service.SensorService.sConnData;
+import static com.example.mun.ruok.Service.SensorService.sUserData;
+import static com.example.mun.ruok.Service.SensorService.sFitData;
 
 public class SettingFragment extends Fragment {
 
@@ -62,8 +54,6 @@ public class SettingFragment extends Fragment {
 
     private ViewGroup rootView;
 
-    public static int fitHour=0, fitMinute=0;
-
     private GoogleSignInClient mGoogleSignInClient;
 
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
@@ -72,9 +62,9 @@ public class SettingFragment extends Fragment {
     private static final String FCM_MESSAGE_URL = "https://fcm.googleapis.com/fcm/send";
     private static final String SERVER_KEY = "AAAAdnZEnuw:APA91bFVvn4PdlV7NG2ate-xWRrBdsNhkRpcWMfIyHuPS9DVu11K0Q5eWCFii3JtFoJp0pZXXAe8YI9Laa0zs7S1WFZKUQselVsWMC0veJUzQHRFwai2p7MQGZguIWqH7PPAJ3bU-T4M";
 
-    private FitSQLiteHelper Fitsqlhelper = new FitSQLiteHelper();
-
     public static String[] values = {"로그아웃", "서비스 중지", "심박수 설정", "운동시간", "연결", "만든이"};
+
+    public static View settingview;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -82,32 +72,18 @@ public class SettingFragment extends Fragment {
         rootView = (ViewGroup) inflater.inflate(R.layout.fragment_setting, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.listview);
 
-        if(CONNECTING_STATE == REQUEST_CONNECTING_CODE) {
-            if(UserType == 0) {
+        if(sConnData.getConnectingCode() == REQUEST_CONNECTING_CODE) {
+            //if(UserType == 0) {
+            if(sUserData.getUserType() == 0) {
                 values[4] = "연결 승인";
             } else {
                 values[4] = "연결 취소";
             }
-        } else if(CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
+        } else if(sConnData.getConnectingCode() == CONNECTING_PERMISSION_CODE) {
             values[4] = "연결 해제";
         } else {
             values[4] = "연결";
         }
-
-        /*ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, values)
-        {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent)
-            {
-                View view = super.getView(position, convertView, parent);
-                TextView textView = (TextView) view.findViewById(android.R.id.text1);
-                textView.setTextColor(Color.BLACK);
-
-                android.support.v7.widget.SwitchCompat switchCompat = (android.support.v7.widget.SwitchCompat) view.findViewById(R.id.fit_switch);
-
-                return view;
-            }
-        };*/
 
         ListViewAdapter adapter = new ListViewAdapter(MainActivity.UserActContext, R.layout.listview_item, values);
         listView.setAdapter(adapter);
@@ -128,31 +104,31 @@ public class SettingFragment extends Fragment {
                     heartDialog.callFunction();
                 }
                 else if(position == 3) {
-                    setFitnessTime();
+                    setFitnessTime(view);
                 }
                 else if(position == 4) {
-                    if (CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {   // 연결이 되어 있을 경우 유저 타입에 상관없이 연결 해제 가능
-                        CONNECTING_STATE = DEFAULT_CODE;
-                        sendPostToFCM(SensorService.CONNECTING_ACCOUNT, DEFAULT_CODE);// 연결 해제
+                    if (sConnData.getConnectingCode() == CONNECTING_PERMISSION_CODE) {   // 연결이 되어 있을 경우 유저 타입에 상관없이 연결 해제 가능
+                        sConnData.setConnectingCode(DEFAULT_CODE);
+                        sendPostToFCM(sConnData.getConnectionWith(), DEFAULT_CODE);// 연결 해제
                         Toast.makeText(MainActivity.UserActContext, "연결이 해제 되었습니다.", Toast.LENGTH_SHORT).show();
                     } else {
-                        if (SensorService.UserType == 1) {
-                            if (CONNECTING_STATE == DEFAULT_CODE) {
+                        if(sUserData.getUserType() == 1) {
+                            if (sConnData.getConnectingCode() == DEFAULT_CODE) {
                                 SendPermissionRequest();    // 연결 요청 메시지 보내기
-                            } else if(CONNECTING_STATE == REQUEST_CONNECTING_CODE) {
-                                sendPostToFCM(CONNECTING_ACCOUNT, DEFAULT_CODE);
+                            } else if(sConnData.getConnectingCode() == REQUEST_CONNECTING_CODE) {
+                                sendPostToFCM(sConnData.getConnectionWith(), DEFAULT_CODE);
                                 Toast.makeText(MainActivity.UserActContext, "연결을 취소 하셨습니다.", Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            if (CONNECTING_STATE == DEFAULT_CODE) {
+                            if (sConnData.getConnectingCode() == DEFAULT_CODE) {
                                 //SendPermissionRequest();    // 연결 요청 메시지 보내기
                                 Toast.makeText(MainActivity.UserActContext, "사용자는 연결을 요청 할 수 없습니다.", Toast.LENGTH_SHORT).show();
-                            } else if (CONNECTING_STATE == REQUEST_CONNECTING_CODE) {
+                            } else if (sConnData.getConnectingCode() == REQUEST_CONNECTING_CODE) {
                                 databaseReference.child("Connection").child(account).addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(DataSnapshot dataSnapshot) {
                                         ConnectDTO connectDTO = dataSnapshot.getValue(ConnectDTO.class);
-                                        sendPostToFCM(connectDTO.ConnectionWith, CONNECTING_PERMISSION_CODE);
+                                        sendPostToFCM(connectDTO.getConnectionWith(), CONNECTING_PERMISSION_CODE);
                                     }
 
                                     @Override
@@ -188,20 +164,17 @@ public class SettingFragment extends Fragment {
         UserActContext.finish();
     }
 
-    private void setFitnessTime() {
+    private void setFitnessTime(final View settingView) {
         TimePickerDialog.OnTimeSetListener timeListener = new TimePickerDialog.OnTimeSetListener() {
 
             @Override
             public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                fitHour = hourOfDay;
-                fitMinute = minute;
-
-                FitHeartDialog fitheartDialog = new FitHeartDialog(getContext());
+                FitHeartDialog fitheartDialog = new FitHeartDialog(getContext(), settingView, hourOfDay, minute);
                 fitheartDialog.callFunction();
             }
         };
 
-        TimePickerDialog fitDialog = new TimePickerDialog(getContext(), timeListener, fitHour, fitMinute, true);
+        TimePickerDialog fitDialog = new TimePickerDialog(getContext(), timeListener, sFitData.getFitHour(), sFitData.getFitMinute(), true);
 
         fitDialog.show();
     }
@@ -243,7 +216,7 @@ public class SettingFragment extends Fragment {
                                     notification.put("body",CODE);
                                     notification.put("tag",account);
                                     root.put("notification", notification);
-                                    root.put("to", userData.fcmToken);
+                                    root.put("to", userData.getFcmToken());
                                     // FMC 메시지 생성 end
 
                                     URL Url = new URL(FCM_MESSAGE_URL);
@@ -261,26 +234,23 @@ public class SettingFragment extends Fragment {
 
                                     ConnectDTO connectDTO = new ConnectDTO();
                                     if(CODE == DEFAULT_CODE) {
-                                        connectDTO.ConnectionWith = "연결 해제";
-                                        connectDTO.CONNECTING_CODE = CODE;
+                                        connectDTO.setConnection("연결 해제", CODE);
 
                                         databaseReference.child("Connection").child(account).setValue(connectDTO);
                                         databaseReference.child("Connection").child(USER).setValue(connectDTO);
                                     } else {
-                                        connectDTO.ConnectionWith = USER;
-                                        connectDTO.CONNECTING_CODE = CODE;
+                                        connectDTO.setConnection(USER,CODE);
 
                                         databaseReference.child("Connection").child(account).setValue(connectDTO);
 
-                                        connectDTO.ConnectionWith = account;
+                                        connectDTO.setConnectionWith(account);
                                         databaseReference.child("Connection").child(USER).setValue(connectDTO);
                                     }
 
-                                    CONNECTING_STATE = CODE;
+                                    sConnData.setConnectingCode(CODE);
 
                                 } catch (Exception e) {
                                     e.printStackTrace();
-                                    //Toast.makeText(MainActivity.UserActContext, "해당 계정이 존재하지 않습니다.", Toast.LENGTH_SHORT).show();
                                 }
                             }
                         }).start();

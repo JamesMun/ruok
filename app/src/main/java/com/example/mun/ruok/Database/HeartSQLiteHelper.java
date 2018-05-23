@@ -46,8 +46,8 @@ public class HeartSQLiteHelper {
         results.moveToFirst();
 
         while(!results.isAfterLast()){
-            SensorService.max_heart_rate = results.getInt(1);
-            SensorService.min_heart_rate = results.getInt(2);
+            //SensorService.max_heart_rate = results.getInt(1);
+            //SensorService.min_heart_rate = results.getInt(2);
             Log.d("HeartSQL", String.valueOf(results.getInt(1)) + " " + String.valueOf(results.getInt(2)));
             results.moveToNext();
         }

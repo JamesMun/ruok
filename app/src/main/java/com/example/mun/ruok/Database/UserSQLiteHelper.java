@@ -44,8 +44,8 @@ public class UserSQLiteHelper {
         results.moveToFirst();
 
         while(!results.isAfterLast()){
-            SensorService.userid = results.getString(1);
-            SensorService.UserType = results.getInt(2);
+            //SensorService.userid = results.getString(1);
+            //SensorService.UserType = results.getInt(2);
             results.moveToNext();
         }
         results.close();

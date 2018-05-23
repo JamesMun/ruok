@@ -9,6 +9,8 @@ import android.widget.Button;
 
 import com.example.mun.ruok.R;
 import com.example.mun.ruok.Service.SensorService;
+import static com.example.mun.ruok.Service.SensorService.sAlert;
+import static com.example.mun.ruok.Service.SensorService.sHeart_Count;
 
 public class AlertActivity extends AppCompatActivity{
 
@@ -43,7 +45,7 @@ public class AlertActivity extends AppCompatActivity{
     protected void onDestroy() {
         super.onDestroy();
         vib.cancel();
-        SensorService.alert = false;
-        SensorService.heart_count = 0;
+        sAlert = false;
+        sHeart_Count = 0;
     }
 }

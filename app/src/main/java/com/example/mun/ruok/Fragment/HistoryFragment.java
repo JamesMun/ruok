@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,6 +48,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import static com.example.mun.ruok.Service.SensorService.sConnData;
+import static com.example.mun.ruok.Service.SensorService.sUserData;
+
 public class HistoryFragment extends Fragment implements OnMapReadyCallback {
 
     private String TAG = "HistoryFragment";
@@ -72,8 +76,8 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
     private String date_of_history;
     private String str[];
 
-    private int count, markercount;
-    private String account = SensorService.account;
+    private int count;
+    private String account;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -85,12 +89,15 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         rootView = (ViewGroup) inflater.inflate(R.layout.fragment_history, container, false);
 
-        if(SensorService.CONNECTING_STATE == CONNECTING_PERMISSION_CODE) {
-            account = SensorService.CONNECTING_ACCOUNT;
-        } else {
-            account = SensorService.account;
+        if(sUserData.getUserType() == 0) {
+            account = sUserData.getUserEmailID();
+        } else if(sUserData.getUserType() == 1) {
+            if (sConnData.getConnectingCode() == CONNECTING_PERMISSION_CODE) {
+                account = sConnData.getConnectionWith();
+            } else {
+                account = SensorService.sAccount;
+            }
         }
-
         return rootView;
     }
 
@@ -119,7 +126,6 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 try {
                                     count = 0;
-                                    markercount = 0;
 
                                     map.clear();        // 맵 상에 있는 모든 마커 삭제
                                     marker.clear();     // 이전에 불러온 마커 위치 삭제
@@ -128,6 +134,10 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                                         HeartDTO heartDTO = snapshot.getValue(HeartDTO.class);
 
                                         str = heartDTO.TS.split(" ");
+                                        if(heartDTO.LAT == null || heartDTO.LON == null) {  // 심박수 측정 값의 위치가 저장되지 않은 경우에만 실행되나 코드 오류 수정을 통해 그런 경우는 데이터가 저장되지 않음으로 삭제 예정
+                                            heartDTO.LAT = 35.140665;
+                                            heartDTO.LON = 126.9285385;
+                                        }
                                         ShowMyLocaion(heartDTO.LAT, heartDTO.LON, map, str[1], heartDTO.HR);
 
                                         marker.add(new LatLng(heartDTO.LAT, heartDTO.LON));
@@ -135,6 +145,8 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                                         labels.add(str[1]);
                                         count++;
                                     }
+                                    //Log.d(TAG,String.valueOf(marker.size()));
+                                    Log.d(TAG,account);
 
                                     map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(count - 1)));
                                     map.animateCamera(CameraUpdateFactory.zoomTo(17));
@@ -169,7 +181,8 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
 
                                     dateText.setText(date_of_history);
                                     } catch (Exception e) {
-                                        Toast.makeText(MainActivity.UserActContext,"데이터가 없습니다.", Toast.LENGTH_SHORT).show();
+                                        e.printStackTrace();
+                                        //Toast.makeText(MainActivity.UserActContext,"데이터가 없습니다.", Toast.LENGTH_SHORT).show();
                                     }
                                 }
 
@@ -299,7 +312,7 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
 
             googleMap.addMarker(markerOptions);
 
-            if(HeartRate < SensorService.max_heart_rate && HeartRate > SensorService.min_heart_rate) {
+            if(HeartRate < sUserData.getMaxHeartRate() && HeartRate > sUserData.getMinHeartRate()) {
                 mClusterManager.addItem(new House(nowLocation, title));
             }
             //googleMap.moveCamera(CameraUpdateFactory.newLatLng(nowLocation));

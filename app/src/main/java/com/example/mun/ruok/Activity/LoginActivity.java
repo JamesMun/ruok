@@ -44,7 +44,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private int UserType;
 
     private GoogleSignInClient mGoogleSignInClient;
-    private UserSQLiteHelper Usersqlhelper = new UserSQLiteHelper();
 
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
@@ -94,6 +93,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         if (account != null) {
 
             String email = account.getEmail();
+
+            databaseReference.child("Users").child(email.substring(0, email.indexOf('@'))).child("fcmToken").setValue(FirebaseInstanceId.getInstance().getToken());
 
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             intent.putExtra("account", email.substring(0, email.indexOf('@')));
@@ -176,37 +177,28 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             public void onDataChange(DataSnapshot dataSnapshot) {
                 try {
                     UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
-                    Log.d(TAG, userDTO.userEmailID);
+                    Log.d(TAG, userDTO.getUserEmailID());
                 } catch (Exception e) {
                     if (UserType == 0) {
                         UserDTO userData = new UserDTO();
-                        userData.userEmailID = email.substring(0, email.indexOf('@'));
-                        userData.fcmToken = FirebaseInstanceId.getInstance().getToken();
-                        userData.max_heart_rate = 120;
-                        userData.min_heart_rate = 60;
-                        userData.userType = UserType;
 
-                        databaseReference.child("Users").child(userData.userEmailID).setValue(userData);
+                        userData.setUserData(email.substring(0, email.indexOf('@')), FirebaseInstanceId.getInstance().getToken(), 120, 60, UserType);
+
+                        databaseReference.child("Users").child(userData.getUserEmailID()).setValue(userData);
 
                         FitDTO fitDTO = new FitDTO();
-                        fitDTO.Fit_min_heart_rate = 60;
-                        fitDTO.Fit_max_heart_rate = 140;
-                        fitDTO.Fit_hour = 2;
-                        fitDTO.Fit_minute = 0;
+                        fitDTO.setFitData(2,0,60,140);
 
-                        databaseReference.child("Fitness").child(userData.userEmailID).setValue(fitDTO);
+                        databaseReference.child("Fitness").child(userData.getUserEmailID()).setValue(fitDTO);
                     } else {
                         GuardianDTO guardianDTO = new GuardianDTO();
-                        guardianDTO.userEmailID = email.substring(0, email.indexOf('@'));
-                        guardianDTO.fcmToken = FirebaseInstanceId.getInstance().getToken();
-                        guardianDTO.userType = UserType;
+                        guardianDTO.setGuardianData(email.substring(0, email.indexOf('@')), FirebaseInstanceId.getInstance().getToken(), UserType);
 
                         databaseReference.child("Users").child(guardianDTO.userEmailID).setValue(guardianDTO);
                     }
 
                     ConnectDTO connectDTO = new ConnectDTO();
-                    connectDTO.ConnectionWith = "연결 해제";
-                    connectDTO.CONNECTING_CODE = DEFAULT_CODE;
+                    connectDTO.setConnection("연결 해제", DEFAULT_CODE);
 
                     databaseReference.child("Connection").child(email.substring(0, email.indexOf('@'))).setValue(connectDTO);
                 }

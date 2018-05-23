@@ -16,22 +16,26 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import static com.example.mun.ruok.Activity.MainActivity.account;
-
-/**
- * Created by Administrator on 2017-08-07.
- */
+import static com.example.mun.ruok.Service.SensorService.sFitData;
 
 public class FitHeartDialog {
 
     private Context context;
     private String TAG = "HeartDialog";
-    private String account = SensorService.account;
+    private String account = SensorService.sAccount;
+
+    private int fithour, fitminute;
+
+    private View settingView;
 
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
 
-    public FitHeartDialog(Context context) {
+    public FitHeartDialog(Context context, View settingView, int fithour, int fitminute) {
         this.context = context;
+        this.settingView = settingView;
+        this.fithour = fithour;
+        this.fitminute = fitminute;
     }
 
     // 호출할 다이얼로그 함수를 정의한다.
@@ -55,8 +59,8 @@ public class FitHeartDialog {
         final EditText maxhredit = (EditText)dlg.findViewById(R.id.maxheartrate);
         final EditText minhredit = (EditText)dlg.findViewById(R.id.minheartrate);
 
-        maxhredit.setText(String.valueOf(SensorService.fit_max_heart_rate));
-        minhredit.setText(String.valueOf(SensorService.fit_min_heart_rate));
+        maxhredit.setText(String.valueOf(sFitData.getFitMaxHeartRate()));
+        minhredit.setText(String.valueOf(sFitData.getFitMinHeartRate()));
 
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -67,7 +71,6 @@ public class FitHeartDialog {
                 final int maxhr, minhr;
 
                 String str = maxhredit.getText().toString();
-                //SettingFragment.maxhr = Integer.parseInt(str);
                 maxhr = Integer.parseInt(str);
 
                 str = minhredit.getText().toString();
@@ -75,15 +78,22 @@ public class FitHeartDialog {
 
                 if(maxhr > minhr) {
 
-                    FitDTO fitDTO = new FitDTO();
-                    fitDTO.Fit_minute = SettingFragment.fitMinute;
-                    fitDTO.Fit_hour = SettingFragment.fitHour;
-                    fitDTO.Fit_max_heart_rate = maxhr;
-                    fitDTO.Fit_min_heart_rate = minhr;
+                    /*sFitData.Fit_minute = fitminute;
+                    sFitData.Fit_hour = fithour;
+                    sFitData.Fit_max_heart_rate = maxhr;
+                    sFitData.Fit_min_heart_rate = minhr;*/
 
-                    databaseReference.child("Fitness").child(account).setValue(fitDTO);
+                    sFitData.setFitData(fithour, fitminute, maxhr, minhr);
+
+                    databaseReference.child("Fitness").child(account).setValue(sFitData);
 
                     Log.d(TAG, "데이터 저장 성공");
+
+                    SensorService.fitStart();
+                    Toast.makeText(MainActivity.UserActContext, "운동을 시작합니다.",Toast.LENGTH_SHORT).show();
+
+                    android.support.v7.widget.SwitchCompat switchCompat = (android.support.v7.widget.SwitchCompat) settingView.findViewById(R.id.fit_switch);
+                    switchCompat.setChecked(true);
 
                     // 커스텀 다이얼로그를 종료한다.
                     dlg.dismiss();
