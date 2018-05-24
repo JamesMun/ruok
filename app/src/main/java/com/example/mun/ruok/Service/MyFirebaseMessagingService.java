@@ -22,6 +22,8 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
     private static final int DEFAULT_CODE = 0;
     private static final int REQUEST_CONNECTING_CODE = 1;
     private static final int CONNECTING_PERMISSION_CODE = 2;
+    private static final int EMERGENCY_CODE = 3;
+
 
     private FirebaseDatabase firebaseDatabase = FirebaseDatabase.getInstance();
     private DatabaseReference databaseReference = firebaseDatabase.getReference();
@@ -41,6 +43,8 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
             sendNotification("연결 승인",from + "님이 연결을 승인하셨습니다.");
         } else if(CONNECTING_CODE == DEFAULT_CODE) {
             sendNotification("연결 해제",from + "님이 연결을 해제하셨습니다.");
+        } else if(CONNECTING_CODE == EMERGENCY_CODE) {
+            sendNotification("위험 알림", from + "님의 상태가 위험합니다.");
         }
     }
 

@@ -71,6 +71,8 @@ public class SensorService extends Service {
 
     private int mHeartRate = 0;
 
+    private HeartDTO heartDTO = new HeartDTO();
+
     public static UserDTO sUserData;
     public static FitDTO sFitData;
     public static ConnectDTO sConnData;
@@ -82,8 +84,6 @@ public class SensorService extends Service {
     // [END mListener_variable_reference]
 
     public static int sHeart_Count = 0;
-    //public static int CONNECTING_STATE;
-    //public static String CONNECTING_ACCOUNT;
 
     public static boolean sAlert = false;
     public static boolean sFit_mode = false;
@@ -93,10 +93,7 @@ public class SensorService extends Service {
 
     public static String sAccount;
 
-    private HeartDTO heartDTO = new HeartDTO();
-
-    private Double lat;
-    private Double lon;
+    private Double lat, lon;
 
     private String mCurrentDate;
 
@@ -143,11 +140,6 @@ public class SensorService extends Service {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 sConnData = dataSnapshot.getValue(ConnectDTO.class);
 
-                /*CONNECTING_STATE = connectDTO.CONNECTING_CODE;
-                CONNECTING_ACCOUNT = connectDTO.ConnectionWith;
-                Log.d(TAG, connectDTO.ConnectionWith);
-                Log.d(TAG, String.valueOf(connectDTO.CONNECTING_CODE));*/
-
                 LoadDataOnFirebase(intent);
             }
 
@@ -166,15 +158,13 @@ public class SensorService extends Service {
 
                 Log.d(TAG, String.valueOf(sUserData.getUserType()));
 
-                if(sUserData.getUserType() == 0) {
+                if(sUserData.getUserType()) {
                     try {
                         databaseReference.child("Fitness").child(sAccount).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 sFitData = dataSnapshot.getValue(FitDTO.class);
                                 Log.d(TAG,"운동시간 불러오기");
-                                Log.d(TAG,String.valueOf(sFitData.getFitHour()));
-                                Log.d(TAG,String.valueOf(sFitData.getFitMinute()));
                             }
 
                             @Override
@@ -188,7 +178,7 @@ public class SensorService extends Service {
                         Log.d(TAG, "데이터 로드 실패");
                     }
                     pd.dismiss();
-                } else if(sUserData.getUserType() == 1) {
+                } else {
                     if(sConnData.getConnectingCode() == CONNECTING_PERMISSION_CODE) {
 
                         databaseReference.child("RealTime").child("RUOK-" + sConnData.getConnectionWith()).addValueEventListener(new ValueEventListener() {
@@ -196,10 +186,10 @@ public class SensorService extends Service {
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 try {
                                     heartDTO = dataSnapshot.getValue(HeartDTO.class);
-                                    Fragment_TabMain.heart_rate_value = heartDTO.HR;
-                                    Fragment_TabMain.heart_time = heartDTO.TS;
-                                    Fragment_TabMain.ShowMyLocaion(heartDTO.LAT, heartDTO.LON, Fragment_TabMain.map);
-                                } catch (Exception e) {
+                                    Fragment_TabMain.heart_rate_value = heartDTO.getHeartRate();
+                                    Fragment_TabMain.heart_time = heartDTO.getTimeStamp();
+                                    Fragment_TabMain.ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLonitude(), Fragment_TabMain.map);
+                                } catch (NullPointerException e) {
                                     Log.d(TAG,"연결 끊김");
                                 }
                                 pd.dismiss();
@@ -416,10 +406,8 @@ public class SensorService extends Service {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
         Date date = new Date(now);
 
-        heartDTO.HR = mHeartRate;
-        heartDTO.TS = dateFormat.format(date);
-        heartDTO.LAT = lat;
-        heartDTO.LON = lon;
+        heartDTO.setHeartData(mHeartRate, dateFormat.format(date), lat, lon);
+        Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
     }
 
 
@@ -428,7 +416,6 @@ public class SensorService extends Service {
         public void onLocationChanged(Location location) {
             lat = location.getLatitude();
             lon = location.getLongitude();
-            Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
         }
 
         @Override
@@ -479,7 +466,7 @@ public class SensorService extends Service {
         setHeartData();
 
         Fragment_TabMain.HeartRateText.setText(String.valueOf(mHeartRate));
-        Fragment_TabMain.HeartTimeText.setText(heartDTO.TS);
+        Fragment_TabMain.HeartTimeText.setText(heartDTO.getTimeStamp());
 
         final Calendar cal = Calendar.getInstance();
 

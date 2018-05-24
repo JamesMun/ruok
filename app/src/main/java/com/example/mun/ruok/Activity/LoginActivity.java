@@ -1,8 +1,6 @@
 package com.example.mun.ruok.Activity;
 
-import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -15,7 +13,6 @@ import com.example.mun.ruok.DTO.ConnectDTO;
 import com.example.mun.ruok.DTO.FitDTO;
 import com.example.mun.ruok.DTO.GuardianDTO;
 import com.example.mun.ruok.DTO.UserDTO;
-import com.example.mun.ruok.Database.UserSQLiteHelper;
 import com.example.mun.ruok.R;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -36,12 +33,10 @@ import com.google.firebase.iid.FirebaseInstanceId;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
 
-    public static Context LoginContext;
-
     private static final int RC_SIGN_IN = 9001;
     private static final String TAG = "LoginActivity";
 
-    private int UserType;
+    private boolean UserType;
 
     private GoogleSignInClient mGoogleSignInClient;
 
@@ -170,37 +165,34 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void makeDBonFirebase(GoogleSignInAccount account) {
-        final String email = account.getEmail();
+        final String email = account.getEmail().substring(0,account.getEmail().indexOf('@'));
 
-        databaseReference.child("Users").child(email.substring(0, email.indexOf('@'))).addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.child("Users").child(email).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                try {
-                    UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
-                    Log.d(TAG, userDTO.getUserEmailID());
-                } catch (Exception e) {
-                    if (UserType == 0) {
+
+                UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
+
+                if(userDTO == null) {
+
+                    if(UserType) {
                         UserDTO userData = new UserDTO();
-
-                        userData.setUserData(email.substring(0, email.indexOf('@')), FirebaseInstanceId.getInstance().getToken(), 120, 60, UserType);
-
-                        databaseReference.child("Users").child(userData.getUserEmailID()).setValue(userData);
+                        userData.setUserData(email, FirebaseInstanceId.getInstance().getToken(), 120, 60, UserType);
+                        databaseReference.child("Users").child(email).setValue(userData);
 
                         FitDTO fitDTO = new FitDTO();
                         fitDTO.setFitData(2,0,60,140);
-
-                        databaseReference.child("Fitness").child(userData.getUserEmailID()).setValue(fitDTO);
-                    } else {
-                        GuardianDTO guardianDTO = new GuardianDTO();
-                        guardianDTO.setGuardianData(email.substring(0, email.indexOf('@')), FirebaseInstanceId.getInstance().getToken(), UserType);
-
-                        databaseReference.child("Users").child(guardianDTO.userEmailID).setValue(guardianDTO);
+                        databaseReference.child("Fitness").child(email).setValue(fitDTO);
+                    } else if(!UserType) {
+                        GuardianDTO guardianData = new GuardianDTO();
+                        guardianData.setGuardianData(email, FirebaseInstanceId.getInstance().getToken(), UserType);
+                        databaseReference.child("Users").child(email).setValue(guardianData);
                     }
 
                     ConnectDTO connectDTO = new ConnectDTO();
                     connectDTO.setConnection("연결 해제", DEFAULT_CODE);
 
-                    databaseReference.child("Connection").child(email.substring(0, email.indexOf('@'))).setValue(connectDTO);
+                    databaseReference.child("Connection").child(email).setValue(connectDTO);
                 }
             }
 
@@ -225,10 +217,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         int id = rg.getCheckedRadioButtonId();
         RadioButton rb = (RadioButton) findViewById(id);
         if(rb.getText().toString().equals("사용자")) {
-            UserType = 0;
+            UserType = true;
         }
         else {
-            UserType = 1;
+            UserType = false;
         }
     }
 }

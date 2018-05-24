@@ -73,8 +73,7 @@ public class SettingFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview);
 
         if(sConnData.getConnectingCode() == REQUEST_CONNECTING_CODE) {
-            //if(UserType == 0) {
-            if(sUserData.getUserType() == 0) {
+            if(sUserData.getUserType()) {
                 values[4] = "연결 승인";
             } else {
                 values[4] = "연결 취소";
@@ -112,7 +111,7 @@ public class SettingFragment extends Fragment {
                         sendPostToFCM(sConnData.getConnectionWith(), DEFAULT_CODE);// 연결 해제
                         Toast.makeText(MainActivity.UserActContext, "연결이 해제 되었습니다.", Toast.LENGTH_SHORT).show();
                     } else {
-                        if(sUserData.getUserType() == 1) {
+                        if(!sUserData.getUserType()) {
                             if (sConnData.getConnectingCode() == DEFAULT_CODE) {
                                 SendPermissionRequest();    // 연결 요청 메시지 보내기
                             } else if(sConnData.getConnectingCode() == REQUEST_CONNECTING_CODE) {

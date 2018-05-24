@@ -89,9 +89,9 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         rootView = (ViewGroup) inflater.inflate(R.layout.fragment_history, container, false);
 
-        if(sUserData.getUserType() == 0) {
+        if(sUserData.getUserType()) {
             account = sUserData.getUserEmailID();
-        } else if(sUserData.getUserType() == 1) {
+        } else {
             if (sConnData.getConnectingCode() == CONNECTING_PERMISSION_CODE) {
                 account = sConnData.getConnectionWith();
             } else {
@@ -133,20 +133,15 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                                         HeartDTO heartDTO = snapshot.getValue(HeartDTO.class);
 
-                                        str = heartDTO.TS.split(" ");
-                                        if(heartDTO.LAT == null || heartDTO.LON == null) {  // 심박수 측정 값의 위치가 저장되지 않은 경우에만 실행되나 코드 오류 수정을 통해 그런 경우는 데이터가 저장되지 않음으로 삭제 예정
-                                            heartDTO.LAT = 35.140665;
-                                            heartDTO.LON = 126.9285385;
-                                        }
-                                        ShowMyLocaion(heartDTO.LAT, heartDTO.LON, map, str[1], heartDTO.HR);
+                                        str = heartDTO.getTimeStamp().split(" ");
 
-                                        marker.add(new LatLng(heartDTO.LAT, heartDTO.LON));
-                                        entries.add(new Entry(count, heartDTO.HR));
+                                        ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLonitude(), map, str[1], heartDTO.getHeartRate());
+
+                                        marker.add(new LatLng(heartDTO.getLatitude(), heartDTO.getLonitude()));
+                                        entries.add(new Entry(count, heartDTO.getHeartRate()));
                                         labels.add(str[1]);
                                         count++;
                                     }
-                                    //Log.d(TAG,String.valueOf(marker.size()));
-                                    Log.d(TAG,account);
 
                                     map.moveCamera(CameraUpdateFactory.newLatLng(marker.get(count - 1)));
                                     map.animateCamera(CameraUpdateFactory.zoomTo(17));

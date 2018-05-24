@@ -5,7 +5,7 @@ public class UserDTO {
     private String fcmToken;
     private int max_heart_rate;
     private int min_heart_rate;
-    private int userType;
+    private boolean userType;
 
     public UserDTO() {
     }
@@ -22,15 +22,21 @@ public class UserDTO {
     public int getMinHeartRate() { return min_heart_rate; }
     public void setMinHeartRate(int min_heart_rate) { this.min_heart_rate = min_heart_rate; }
 
-    public int getUserType() { return userType; }
-    public void setUserType(int userType) { this.userType = userType; }
+    public boolean getUserType() { return userType; }
+    public void setUserType(boolean userType) { this.userType = userType; }
 
     public void setHeartRate(int max_heart_rate, int min_heart_rate) {
         this.max_heart_rate = max_heart_rate;
         this.min_heart_rate = min_heart_rate;
     }
 
-    public void setUserData(String userEmailID, String fcmToken, int max_heart_rate, int min_heart_rate, int userType) {
+    public void setGuardianData(String userEmailID, String fcmToken, boolean userType) {
+        this.userEmailID = userEmailID;
+        this.fcmToken = fcmToken;
+        this.userType = userType;
+    }
+
+    public void setUserData(String userEmailID, String fcmToken, int max_heart_rate, int min_heart_rate, boolean userType) {
         this.userEmailID = userEmailID;
         this.fcmToken = fcmToken;
         this.max_heart_rate = max_heart_rate;

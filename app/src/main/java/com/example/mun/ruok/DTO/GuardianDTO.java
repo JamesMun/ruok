@@ -1,9 +1,9 @@
 package com.example.mun.ruok.DTO;
 
 public class GuardianDTO {
-    public String userEmailID; // email 주소에서 @ 이전까지의 값.
-    public String fcmToken;
-    public int userType;
+    private String userEmailID; // email 주소에서 @ 이전까지의 값.
+    private String fcmToken;
+    private boolean userType;
 
     public GuardianDTO() {
     }
@@ -14,10 +14,10 @@ public class GuardianDTO {
     public String getFcmToken() { return fcmToken; }
     public void setFcmToken(String FcmToken) { this.fcmToken = FcmToken; }
 
-    public int getUserType() { return userType; }
-    public void setUserType(int userType) { this.userType = userType; }
+    public boolean getUserType() { return userType; }
+    public void setUserType(boolean userType) { this.userType = userType; }
 
-    public void setGuardianData(String userEmailID, String fcmToken, int userType) {
+    public void setGuardianData(String userEmailID, String fcmToken, boolean userType) {
         this.userEmailID = userEmailID;
         this.fcmToken = fcmToken;
         this.userType = userType;

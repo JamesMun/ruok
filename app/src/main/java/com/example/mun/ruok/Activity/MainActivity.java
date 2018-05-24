@@ -69,9 +69,8 @@ public class MainActivity extends AppCompatActivity {
                             Manifest.permission.READ_EXTERNAL_STORAGE,
                             Manifest.permission.WRITE_EXTERNAL_STORAGE,}, REQUEST_PERMISSION);
         }
-        else {
-            checkBluetooth();
-        }
+
+        checkBluetooth();
     }
 
     @Override
@@ -129,6 +128,14 @@ public class MainActivity extends AppCompatActivity {
                         stopSensorService();
                     }
                 }
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if(hasFocus) {
+            checkGPSService();
         }
     }
 
