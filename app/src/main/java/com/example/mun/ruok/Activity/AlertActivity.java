@@ -28,6 +28,7 @@ import static com.example.mun.ruok.Service.SensorService.sAccount;
 import static com.example.mun.ruok.Service.SensorService.sAlert;
 import static com.example.mun.ruok.Service.SensorService.sConnData;
 import static com.example.mun.ruok.Service.SensorService.sHeart_Count;
+import static com.example.mun.ruok.Service.SensorService.sUserData;
 
 public class AlertActivity extends AppCompatActivity{
 
@@ -70,13 +71,17 @@ public class AlertActivity extends AppCompatActivity{
             }
         });
 
-        timerStart();
+        if(sUserData.getUserType()) {
+            timerStart();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        timer.cancel();
+        if(sUserData.getUserType()) {
+            timer.cancel();
+        }
         vib.cancel();
         sAlert = false;
         sHeart_Count = 0;

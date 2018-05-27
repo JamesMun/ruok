@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.example.mun.ruok.Activity.MainActivity;
 import com.example.mun.ruok.R;
+import com.example.mun.ruok.Service.SensorService;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -27,6 +28,9 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import static com.example.mun.ruok.Service.SensorService.lat;
+import static com.example.mun.ruok.Service.SensorService.lon;
 
 
 /**

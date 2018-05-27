@@ -93,7 +93,7 @@ public class SensorService extends Service {
 
     public static String sAccount;
 
-    private Double lat, lon;
+    public static Double lat, lon;
 
     private String mCurrentDate;
 
@@ -407,7 +407,6 @@ public class SensorService extends Service {
         Date date = new Date(now);
 
         heartDTO.setHeartData(mHeartRate, dateFormat.format(date), lat, lon);
-        Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
     }
 
 
@@ -416,6 +415,7 @@ public class SensorService extends Service {
         public void onLocationChanged(Location location) {
             lat = location.getLatitude();
             lon = location.getLongitude();
+            Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
         }
 
         @Override
@@ -467,6 +467,7 @@ public class SensorService extends Service {
 
         Fragment_TabMain.HeartRateText.setText(String.valueOf(mHeartRate));
         Fragment_TabMain.HeartTimeText.setText(heartDTO.getTimeStamp());
+        Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
 
         final Calendar cal = Calendar.getInstance();
 

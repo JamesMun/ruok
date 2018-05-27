@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.example.mun.ruok.Activity.AlertActivity;
 import com.example.mun.ruok.Activity.MainActivity;
 import com.example.mun.ruok.DTO.ConnectDTO;
 import com.example.mun.ruok.R;
@@ -45,6 +46,8 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
             sendNotification("연결 해제",from + "님이 연결을 해제하셨습니다.");
         } else if(CONNECTING_CODE == EMERGENCY_CODE) {
             sendNotification("위험 알림", from + "님의 상태가 위험합니다.");
+            Intent intent = new Intent(getApplicationContext(), AlertActivity.class);
+            startActivity(intent);
         }
     }
 
