@@ -2,14 +2,19 @@ package com.example.mun.ruok.Activity;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
@@ -26,6 +31,16 @@ import com.example.mun.ruok.Fragment.HistoryFragment;
 import com.example.mun.ruok.Fragment.SettingFragment;
 import com.example.mun.ruok.R;
 import com.example.mun.ruok.Service.SensorService;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -44,6 +59,11 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 3;  //요청코드 상수 정의
     private BluetoothAdapter mBluetoothAdapter = null;  //객체선언
+
+    private static final int REQUEST_CHECK_SETTINGS = 0x1;
+    private static GoogleApiClient mGoogleApiClient;
+    private static final int ACCESS_FINE_LOCATION_INTENT_ID = 3;
+    private static final String BROADCAST_ACTION = "android.location.PROVIDERS_CHANGED";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,9 +88,20 @@ public class MainActivity extends AppCompatActivity {
                             Manifest.permission.ACCESS_FINE_LOCATION,
                             Manifest.permission.READ_EXTERNAL_STORAGE,
                             Manifest.permission.WRITE_EXTERNAL_STORAGE,}, REQUEST_PERMISSION);
+        } else {
+            initGoogleAPIClient();
+            showSettingDialog();
         }
+        //checkBluetooth();
+    }
 
-        checkBluetooth();
+    /* Initiate Google API Client  */
+    private void initGoogleAPIClient() {
+        //Without Google API Client Auto Location Dialog will not work
+        mGoogleApiClient = new GoogleApiClient.Builder(MainActivity.this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
     }
 
     @Override
@@ -111,6 +142,50 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /* Show Location Access Dialog */
+    private void showSettingDialog() {
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);//Setting priotity of Location request to high
+        locationRequest.setInterval(30 * 1000);
+        locationRequest.setFastestInterval(5 * 1000);//5 sec Time interval for location update
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
+        builder.setAlwaysShow(true); //this is the key ingredient to show dialog always when GPS is off
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient, builder.build());
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(LocationSettingsResult result) {
+                final Status status = result.getStatus();
+                final LocationSettingsStates state = result.getLocationSettingsStates();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        // All location settings are satisfied. The client can initialize location
+                        // requests here.
+                        checkBluetooth();
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied. But could be fixed by showing the user
+                        // a dialog.
+                        try {
+                            // Show the dialog by calling startResolutionForResult(),
+                            // and check the result in onActivityResult().
+                            status.startResolutionForResult(MainActivity.this, REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException e) {
+                            e.printStackTrace();
+                            // Ignore the error.
+                        }
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        // Location settings are not satisfied. However, we have no way to fix the
+                        // settings so we won't show the dialog.
+                        break;
+                }
+            }
+        });
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         //super.onActivityResult(requestCode, resultCode, data);
@@ -128,16 +203,31 @@ public class MainActivity extends AppCompatActivity {
                         stopSensorService();
                     }
                 }
+                break;
+
+            // Check for the integer request code originally supplied to startResolutionForResult().
+            case REQUEST_CHECK_SETTINGS:
+                switch (resultCode) {
+                    case RESULT_OK:
+                        Log.e("Settings", "Result OK");
+                        //startLocationUpdates();
+                        checkBluetooth();
+                        break;
+                    case RESULT_CANCELED:
+                        Log.e("Settings", "Result Cancel");
+                        break;
+                }
+                break;
         }
     }
 
-    @Override
+    /*@Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if(hasFocus) {
             checkGPSService();
         }
-    }
+    }*/
 
     public void startRUOK() {
         if(!isServiceRunning()) {   // 서비스가 켜져있지 않은 경우
@@ -155,15 +245,14 @@ public class MainActivity extends AppCompatActivity {
     public boolean checkGPSService() {
         LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            /*Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
             intent.addCategory(Intent.CATEGORY_DEFAULT);
-            startActivity(intent);
+            startActivity(intent);*/
             return false;
         } else {
             return true;
         }
     }
-
     public void stopSensorService() {   // 서비스 중지
         Intent intent = new Intent(this, SensorService.class);
         stopService(intent);

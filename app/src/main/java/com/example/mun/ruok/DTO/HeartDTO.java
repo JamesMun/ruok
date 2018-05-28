@@ -34,7 +34,7 @@ public class HeartDTO {
         this.LON = LON;
     }
 
-    public Double getLonitude() {
+    public Double getLongitude() {
         return LON;
     }
 
@@ -48,5 +48,13 @@ public class HeartDTO {
         this.TS = TS;
         this.LAT = LAT;
         this.LON = LON;
+    }
+
+    public boolean hasLocation() {
+        if(this.LAT != null && this.LON != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

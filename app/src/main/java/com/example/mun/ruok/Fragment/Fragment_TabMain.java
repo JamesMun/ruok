@@ -9,6 +9,7 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TabHost;
 import android.widget.TextView;
 
@@ -91,6 +92,8 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     private Thread heartThread, thread;
 
+    public static ProgressBar progressBar;
+
     MainActivity mainclass = new MainActivity();
 
     public Fragment_TabMain() {
@@ -130,6 +133,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         HeartRateText = (TextView) view.findViewById(R.id.HeartDataValue);
         HeartTimeText = (TextView) view.findViewById(R.id.MeasurementTime);
         mChart = (LineChart) view.findViewById(R.id.chart);
+        progressBar = (ProgressBar) view.findViewById(R.id.heartseekbar);
 
         chart_setting();
 
@@ -280,7 +284,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
             data.addDataSet(set1);
         }
 
-        data.addEntry(new Entry(set1.getEntryCount(), heart_rate_value), 0);
+        data.addEntry(new Entry(set1.getEntryCount(), SensorService.sHeartRate), 0);
 
         data.notifyDataChanged();                                      // data의 값 변동을 감지함
 

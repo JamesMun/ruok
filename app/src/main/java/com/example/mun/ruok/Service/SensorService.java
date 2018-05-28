@@ -10,9 +10,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -69,7 +67,7 @@ public class SensorService extends Service {
     private GoogleApiClient mClient = null;
     private boolean authInProgress = false;
 
-    private int mHeartRate = 0;
+    public static int sHeartRate = 0;
 
     private HeartDTO heartDTO = new HeartDTO();
 
@@ -172,11 +170,11 @@ public class SensorService extends Service {
 
                             }
                         });
-                        StartLocationService();
-                        processCommand(intent);
                     } catch (Exception e) {
                         Log.d(TAG, "데이터 로드 실패");
                     }
+                    StartLocationService();
+                    processCommand(intent);
                     pd.dismiss();
                 } else {
                     if(sConnData.getConnectingCode() == CONNECTING_PERMISSION_CODE) {
@@ -188,7 +186,7 @@ public class SensorService extends Service {
                                     heartDTO = dataSnapshot.getValue(HeartDTO.class);
                                     Fragment_TabMain.heart_rate_value = heartDTO.getHeartRate();
                                     Fragment_TabMain.heart_time = heartDTO.getTimeStamp();
-                                    Fragment_TabMain.ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLonitude(), Fragment_TabMain.map);
+                                    Fragment_TabMain.ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLongitude(), Fragment_TabMain.map);
                                 } catch (NullPointerException e) {
                                     Log.d(TAG,"연결 끊김");
                                 }
@@ -342,7 +340,7 @@ public class SensorService extends Service {
                 for (Field field : dataPoint.getDataType().getFields()) {
                     Value val = dataPoint.getValue(field);
                     Float heartrate = val.asFloat();
-                    mHeartRate = heartrate.intValue();
+                    sHeartRate = heartrate.intValue();
 
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
@@ -406,7 +404,7 @@ public class SensorService extends Service {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
         Date date = new Date(now);
 
-        heartDTO.setHeartData(mHeartRate, dateFormat.format(date), lat, lon);
+        heartDTO.setHeartData(sHeartRate, dateFormat.format(date), lat, lon);
     }
 
 
@@ -430,9 +428,7 @@ public class SensorService extends Service {
         public void onProviderDisabled(String s) {
             lat = null;
             lon = null;
-            Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            intent.addCategory(Intent.CATEGORY_DEFAULT);
-            startActivity(intent);
+            Toast.makeText(MainActivity.UserActContext,"위치 서비스를 켜지 않으면 데이터가 저장되지 않습니다.", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -450,8 +446,20 @@ public class SensorService extends Service {
                 //                                          int[] grantResults)
                 // to handle the case where the user grants the permission. See the documentation
                 // for ActivityCompat#requestPermissions for more details.
+
                 return;
             }
+
+            try {
+                Location location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (location == null) {
+                    location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+                Fragment_TabMain.ShowMyLocaion(location.getLatitude(), location.getLongitude(), Fragment_TabMain.map);
+            } catch (NullPointerException e) {
+                Toast.makeText(MainActivity.UserActContext,"위치 서비스에 문제가 발생했습니다.", Toast.LENGTH_LONG).show();
+            }
+
             manager.requestLocationUpdates(GPS_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
 
             // location request with network
@@ -465,15 +473,16 @@ public class SensorService extends Service {
     private void ReceiveHeartData() {
         setHeartData();
 
-        Fragment_TabMain.HeartRateText.setText(String.valueOf(mHeartRate));
+        Fragment_TabMain.HeartRateText.setText(String.valueOf(sHeartRate));
         Fragment_TabMain.HeartTimeText.setText(heartDTO.getTimeStamp());
-        Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
+        //Fragment_TabMain.progressBar.setProgress(mHeartRate);
 
         final Calendar cal = Calendar.getInstance();
 
         mCurrentDate = String.format("%d-%d-%d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE));
 
-        if (lat != null && lon != null) {
+        if (heartDTO.hasLocation()) {
+            //Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
             databaseReference.child("RealTime").child("RUOK-" + sAccount).setValue(heartDTO);
             databaseReference.child("History").child("RUOK-" + sAccount).child(mCurrentDate).push().setValue(heartDTO);
         }
@@ -482,12 +491,11 @@ public class SensorService extends Service {
             heartChecker(sUserData.getMaxHeartRate(), sUserData.getMinHeartRate());
         } else {
             heartChecker(sFitData.getFitMaxHeartRate(), sFitData.getFitMinHeartRate());
-            Log.d(TAG,"운동 모드 실행");
         }
     }
 
     private void heartChecker(int max, int min) {
-        if (mHeartRate > max || mHeartRate < min) {
+        if (sHeartRate > max || sHeartRate < min) {
             sHeart_Count++;
             if (sHeart_Count > 5 && !sAlert) {
                 sAlert = true;

@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,7 +54,7 @@ public class ListViewAdapter extends ArrayAdapter {
         TextView textView = (TextView) convertView.findViewById(R.id.textView1);
         textView.setText(values[position]);
         textView.setTag(position);
-        android.support.v7.widget.SwitchCompat switchCompat = (android.support.v7.widget.SwitchCompat) convertView.findViewById(R.id.fit_switch);
+       Switch switchCompat = (Switch) convertView.findViewById(R.id.fit_switch);
 
         if(position == 3) {
             switchCompat.setVisibility(View.VISIBLE);

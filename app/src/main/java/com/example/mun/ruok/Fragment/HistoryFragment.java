@@ -135,9 +135,11 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
 
                                         str = heartDTO.getTimeStamp().split(" ");
 
-                                        ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLonitude(), map, str[1], heartDTO.getHeartRate());
+                                        Log.d(TAG, String.valueOf(heartDTO.getLatitude()));
 
-                                        marker.add(new LatLng(heartDTO.getLatitude(), heartDTO.getLonitude()));
+                                        ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLongitude(), map, str[1], heartDTO.getHeartRate());
+
+                                        marker.add(new LatLng(heartDTO.getLatitude(), heartDTO.getLongitude()));
                                         entries.add(new Entry(count, heartDTO.getHeartRate()));
                                         labels.add(str[1]);
                                         count++;
@@ -175,9 +177,10 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                                     mChart.moveViewToX(count);                     // 가장 최근에 추가한 데이터의 위치로 chart를 이동함
 
                                     dateText.setText(date_of_history);
+                                    } catch (ArrayIndexOutOfBoundsException e) {
+                                        Toast.makeText(MainActivity.UserActContext,"데이터가 없습니다.", Toast.LENGTH_SHORT).show();
                                     } catch (Exception e) {
                                         e.printStackTrace();
-                                        //Toast.makeText(MainActivity.UserActContext,"데이터가 없습니다.", Toast.LENGTH_SHORT).show();
                                     }
                                 }
 

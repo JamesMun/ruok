@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import com.example.mun.ruok.Activity.MainActivity;
@@ -92,7 +93,7 @@ public class FitHeartDialog {
                     SensorService.fitStart();
                     Toast.makeText(MainActivity.UserActContext, "운동을 시작합니다.",Toast.LENGTH_SHORT).show();
 
-                    android.support.v7.widget.SwitchCompat switchCompat = (android.support.v7.widget.SwitchCompat) settingView.findViewById(R.id.fit_switch);
+                   Switch switchCompat = (Switch) settingView.findViewById(R.id.fit_switch);
                     switchCompat.setChecked(true);
 
                     // 커스텀 다이얼로그를 종료한다.
