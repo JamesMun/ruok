@@ -1,6 +1,7 @@
 package com.example.mun.ruok.Fragment;
 
 import android.graphics.Color;
+import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
 import android.os.Bundle;
@@ -29,9 +30,11 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.lylc.widget.circularprogressbar.CircularProgressBar;
 
 import static com.example.mun.ruok.Service.SensorService.lat;
 import static com.example.mun.ruok.Service.SensorService.lon;
+import static com.example.mun.ruok.Service.SensorService.sHeartDTO;
 
 
 /**
@@ -76,7 +79,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     private Double lat = 35.140665;
     private Double lon = 126.9285385;
 
-    public static int heart_rate_value = 0, rr_rate_value = 0;
+    public static int heart_rate_value = 0, heart_start = 0;
     public static String heart_time = "";
 
     private LineChart mChart;
@@ -92,7 +95,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     private Thread heartThread, thread;
 
-    public static ProgressBar progressBar;
+    public static CircularProgressBar heart_seekbar;
 
     MainActivity mainclass = new MainActivity();
 
@@ -133,7 +136,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         HeartRateText = (TextView) view.findViewById(R.id.HeartDataValue);
         HeartTimeText = (TextView) view.findViewById(R.id.MeasurementTime);
         mChart = (LineChart) view.findViewById(R.id.chart);
-        progressBar = (ProgressBar) view.findViewById(R.id.heartseekbar);
+        heart_seekbar = (CircularProgressBar) view.findViewById(R.id.heartseekbar);
 
         chart_setting();
 
@@ -145,7 +148,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         mapView = (MapView) view.findViewById(R.id.mapView);
         mapView.getMapAsync(this);
 
-        //startSubThread();
+        startSubThread();
 
         if (mapView != null) {
             mapView.onCreate(savedInstanceState);
@@ -230,6 +233,24 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         }
     }
 
+    // aqi seekbar
+    public void seekani(CircularProgressBar item, int startval, int endval) {
+        item.animateProgressTo(startval, endval, new CircularProgressBar.ProgressAnimationListener() {
+            @Override
+            public void onAnimationStart() {
+            }
+
+            @Override
+            public void onAnimationProgress(int progress) {
+            }
+
+            @Override
+            public void onAnimationFinish() {
+            }
+        });
+
+    }
+
     private void chart_setting() {
         // 차트의 아래 Axis
         XAxis xAxis = mChart.getXAxis();
@@ -305,5 +326,42 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
         set.setHighLightColor(Color.rgb(244, 117, 117));               // 하이라이트 컬러(선택시 색)을 rgb(244, 117, 117)로 설정
         set.setDrawValues(false);                                     // 각 데이터의 값을 텍스트로 나타내지 않게함(false)
         return set;                                                   // 이렇게 생성한 set을 반환
+    }
+
+    public void startSubThread() {
+        //작업스레드 생성(매듭 묶는과정)
+        heartHandler heartRunnable = new heartHandler();
+        heartThread = new Thread(heartRunnable);
+        heartThread.setDaemon(true);
+        heartThread.start();
+    }
+
+    android.os.Handler receivehearthandler = new android.os.Handler() {
+        public void handleMessage(Message msg) {
+            seekani(heart_seekbar, Integer.parseInt(String.valueOf(Math.round(heart_start*0.7))), Integer.parseInt(String.valueOf(Math.round(SensorService.sHeartRate*0.7))));
+
+            heart_start = SensorService.sHeartRate;
+
+            HeartRateText.setText(String.valueOf(sHeartDTO.getHeartRate()));
+            HeartTimeText.setText(String.valueOf(sHeartDTO.getTimeStamp()));
+            if(sHeartDTO.hasLocation()) {
+                ShowMyLocaion(sHeartDTO.getLatitude(), sHeartDTO.getLongitude(), map);
+            }
+        }
+    };
+
+    public class heartHandler implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                Message msg = Message.obtain();
+                msg.what = 0;
+                receivehearthandler.sendMessage(msg);
+                try {
+                    Thread.sleep(1000); // 갱신주기 1초
+                } catch (Exception e) {
+                }
+            }
+        }
     }
 }

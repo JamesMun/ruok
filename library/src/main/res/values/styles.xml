@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:circular="http://schemas.android.com/apk/res/com.vimana.widgets.progressbar">
+
+    <style name="Widget"/>
+
+    <style name="Widget.ProgressBar.CircularProgressBar" parent="Widget">
+        <item name="android:indeterminateOnly">false</item>
+        <item name="android:adjustViewBounds">true</item>
+        <item name="cpb_progressColor">#00b774</item>
+        <item name="cpb_hasShadow">true</item>
+        <item name="cpb_strokeWidth">40</item>  <!-- SeekBar Width (Default:20) -->
+        <item name="cpb_titleColor">@color/circular_progress_default_title</item>
+        <item name="cpb_subtitleColor">@color/circular_progress_default_subtitle</item>
+    </style>
+
+</resources>

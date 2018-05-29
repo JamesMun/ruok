@@ -69,8 +69,7 @@ public class SensorService extends Service {
 
     public static int sHeartRate = 0;
 
-    private HeartDTO heartDTO = new HeartDTO();
-
+    public static HeartDTO sHeartDTO = new HeartDTO();
     public static UserDTO sUserData;
     public static FitDTO sFitData;
     public static ConnectDTO sConnData;
@@ -183,10 +182,10 @@ public class SensorService extends Service {
                             @Override
                             public void onDataChange(DataSnapshot dataSnapshot) {
                                 try {
-                                    heartDTO = dataSnapshot.getValue(HeartDTO.class);
-                                    Fragment_TabMain.heart_rate_value = heartDTO.getHeartRate();
-                                    Fragment_TabMain.heart_time = heartDTO.getTimeStamp();
-                                    Fragment_TabMain.ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLongitude(), Fragment_TabMain.map);
+                                    sHeartDTO = dataSnapshot.getValue(HeartDTO.class);
+                                    /*Fragment_TabMain.heart_rate_value = sHeartDTO.getHeartRate();
+                                    Fragment_TabMain.heart_time = sHeartDTO.getTimeStamp();
+                                    Fragment_TabMain.ShowMyLocaion(sHeartDTO.getLatitude(), sHeartDTO.getLongitude(), Fragment_TabMain.map);*/
                                 } catch (NullPointerException e) {
                                     Log.d(TAG,"연결 끊김");
                                 }
@@ -404,7 +403,7 @@ public class SensorService extends Service {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
         Date date = new Date(now);
 
-        heartDTO.setHeartData(sHeartRate, dateFormat.format(date), lat, lon);
+        sHeartDTO.setHeartData(sHeartRate, dateFormat.format(date), lat, lon);
     }
 
 
@@ -473,18 +472,18 @@ public class SensorService extends Service {
     private void ReceiveHeartData() {
         setHeartData();
 
-        Fragment_TabMain.HeartRateText.setText(String.valueOf(sHeartRate));
-        Fragment_TabMain.HeartTimeText.setText(heartDTO.getTimeStamp());
+        //Fragment_TabMain.HeartRateText.setText(String.valueOf(sHeartRate));
+        //Fragment_TabMain.HeartTimeText.setText(sHeartDTO.getTimeStamp());
         //Fragment_TabMain.progressBar.setProgress(mHeartRate);
 
         final Calendar cal = Calendar.getInstance();
 
         mCurrentDate = String.format("%d-%d-%d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE));
 
-        if (heartDTO.hasLocation()) {
+        if (sHeartDTO.hasLocation()) {
             //Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
-            databaseReference.child("RealTime").child("RUOK-" + sAccount).setValue(heartDTO);
-            databaseReference.child("History").child("RUOK-" + sAccount).child(mCurrentDate).push().setValue(heartDTO);
+            databaseReference.child("RealTime").child("RUOK-" + sAccount).setValue(sHeartDTO);
+            databaseReference.child("History").child("RUOK-" + sAccount).child(mCurrentDate).push().setValue(sHeartDTO);
         }
 
         if (!sFit_mode) {
