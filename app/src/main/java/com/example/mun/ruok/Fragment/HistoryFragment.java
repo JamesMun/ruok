@@ -127,15 +127,15 @@ public class HistoryFragment extends Fragment implements OnMapReadyCallback {
                                 try {
                                     count = 0;
 
-                                    map.clear();        // 맵 상에 있는 모든 마커 삭제
-                                    marker.clear();     // 이전에 불러온 마커 위치 삭제
-
                                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                                         HeartDTO heartDTO = snapshot.getValue(HeartDTO.class);
 
-                                        str = heartDTO.getTimeStamp().split(" ");
+                                        if(count == 0 && heartDTO.hasLocation()) {
+                                            map.clear();        // 맵 상에 있는 모든 마커 삭제
+                                            marker.clear();     // 이전에 불러온 마커 위치 삭제
+                                        }
 
-                                        Log.d(TAG, String.valueOf(heartDTO.getLatitude()));
+                                        str = heartDTO.getTimeStamp().split(" ");
 
                                         ShowMyLocaion(heartDTO.getLatitude(), heartDTO.getLongitude(), map, str[1], heartDTO.getHeartRate());
 

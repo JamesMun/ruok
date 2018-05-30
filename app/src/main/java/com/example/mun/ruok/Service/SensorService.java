@@ -57,17 +57,17 @@ import static android.location.LocationManager.GPS_PROVIDER;
 public class SensorService extends Service {
     private static final String TAG = "SensorService";
 
-    private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
-    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
+    private final int REQUEST_OAUTH_REQUEST_CODE = 1;
+    private final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
-    private static final int DEFAULT_CODE = 0;
-    private static final int REQUEST_CONNECTING_CODE = 1;
-    private static final int CONNECTING_PERMISSION_CODE = 2;
+    private final int DEFAULT_CODE = 0;
+    private final int REQUEST_CONNECTING_CODE = 1;
+    private final int CONNECTING_PERMISSION_CODE = 2;
 
     private GoogleApiClient mClient = null;
     private boolean authInProgress = false;
 
-    public static int sHeartRate = 0;
+    private int mHeartRate = 0;
 
     public static HeartDTO sHeartDTO = new HeartDTO();
     public static UserDTO sUserData;
@@ -90,7 +90,7 @@ public class SensorService extends Service {
 
     public static String sAccount;
 
-    public static Double lat, lon;
+    private Double lat, lon;
 
     private String mCurrentDate;
 
@@ -338,8 +338,7 @@ public class SensorService extends Service {
             public void onDataPoint(DataPoint dataPoint) {
                 for (Field field : dataPoint.getDataType().getFields()) {
                     Value val = dataPoint.getValue(field);
-                    Float heartrate = val.asFloat();
-                    sHeartRate = heartrate.intValue();
+                    mHeartRate = (int) val.asFloat();
 
                     Log.i(TAG, "Detected DataPoint field: " + field.getName());
                     Log.i(TAG, "Detected DataPoint value: " + val);
@@ -403,7 +402,7 @@ public class SensorService extends Service {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
         Date date = new Date(now);
 
-        sHeartDTO.setHeartData(sHeartRate, dateFormat.format(date), lat, lon);
+        sHeartDTO.setHeartData(mHeartRate, dateFormat.format(date), lat, lon);
     }
 
 
@@ -472,16 +471,11 @@ public class SensorService extends Service {
     private void ReceiveHeartData() {
         setHeartData();
 
-        //Fragment_TabMain.HeartRateText.setText(String.valueOf(sHeartRate));
-        //Fragment_TabMain.HeartTimeText.setText(sHeartDTO.getTimeStamp());
-        //Fragment_TabMain.progressBar.setProgress(mHeartRate);
-
         final Calendar cal = Calendar.getInstance();
 
         mCurrentDate = String.format("%d-%d-%d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE));
 
         if (sHeartDTO.hasLocation()) {
-            //Fragment_TabMain.ShowMyLocaion(lat,lon,Fragment_TabMain.map);
             databaseReference.child("RealTime").child("RUOK-" + sAccount).setValue(sHeartDTO);
             databaseReference.child("History").child("RUOK-" + sAccount).child(mCurrentDate).push().setValue(sHeartDTO);
         }
@@ -494,7 +488,7 @@ public class SensorService extends Service {
     }
 
     private void heartChecker(int max, int min) {
-        if (sHeartRate > max || sHeartRate < min) {
+        if (mHeartRate > max || mHeartRate < min) {
             sHeart_Count++;
             if (sHeart_Count > 5 && !sAlert) {
                 sAlert = true;

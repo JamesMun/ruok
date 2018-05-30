@@ -10,6 +10,9 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TabHost;
 import android.widget.TextView;
@@ -32,8 +35,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.lylc.widget.circularprogressbar.CircularProgressBar;
 
-import static com.example.mun.ruok.Service.SensorService.lat;
-import static com.example.mun.ruok.Service.SensorService.lon;
 import static com.example.mun.ruok.Service.SensorService.sHeartDTO;
 
 
@@ -74,15 +75,14 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     private ViewGroup rootView;
 
-    private static final int FASTEST_UPDATE_INTERVAL_MS = 15000;
-
     private Double lat = 35.140665;
     private Double lon = 126.9285385;
 
-    public static int heart_rate_value = 0, heart_start = 0;
-    public static String heart_time = "";
+    private int heart_start = 0;
 
     private LineChart mChart;
+    private ImageView Heart;
+    private Animation animation;
 
     private BluetoothAdapter mBluetoothAdapter = null; /* Intent request codes*/
 
@@ -134,9 +134,14 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
     public void onViewCreated(final View view, @Nullable Bundle savedInstanceState) {
 
         HeartRateText = (TextView) view.findViewById(R.id.HeartDataValue);
-        HeartTimeText = (TextView) view.findViewById(R.id.MeasurementTime);
         mChart = (LineChart) view.findViewById(R.id.chart);
         heart_seekbar = (CircularProgressBar) view.findViewById(R.id.heartseekbar);
+
+        Heart = (ImageView) view.findViewById(R.id.smallheart);
+
+        animation = AnimationUtils.loadAnimation(getContext(), R.anim.wave);
+        animation.setRepeatCount(Animation.INFINITE);
+        Heart.startAnimation(animation);
 
         chart_setting();
 
@@ -305,7 +310,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
             data.addDataSet(set1);
         }
 
-        data.addEntry(new Entry(set1.getEntryCount(), SensorService.sHeartRate), 0);
+        data.addEntry(new Entry(set1.getEntryCount(), sHeartDTO.getHeartRate()), 0);
 
         data.notifyDataChanged();                                      // data의 값 변동을 감지함
 
@@ -338,12 +343,13 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     android.os.Handler receivehearthandler = new android.os.Handler() {
         public void handleMessage(Message msg) {
-            seekani(heart_seekbar, Integer.parseInt(String.valueOf(Math.round(heart_start*0.7))), Integer.parseInt(String.valueOf(Math.round(SensorService.sHeartRate*0.7))));
+            seekani(heart_seekbar, Integer.parseInt(String.valueOf(Math.round(heart_start * 0.7))), Integer.parseInt(String.valueOf(Math.round(sHeartDTO.getHeartRate() * 0.7))));
 
-            heart_start = SensorService.sHeartRate;
+            //animation.setDuration((20 - sHeartDTO.getHeartRate() / 5) * 80);
+
+            heart_start = sHeartDTO.getHeartRate();
 
             HeartRateText.setText(String.valueOf(sHeartDTO.getHeartRate()));
-            HeartTimeText.setText(String.valueOf(sHeartDTO.getTimeStamp()));
             if(sHeartDTO.hasLocation()) {
                 ShowMyLocaion(sHeartDTO.getLatitude(), sHeartDTO.getLongitude(), map);
             }
