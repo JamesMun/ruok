@@ -27,7 +27,7 @@
             android:layout_gravity="center"
             android:layout_height="wrap_content">
 
-            <LinearLayout
+            <RelativeLayout
                 android:id="@+id/tab_content1"
                 android:layout_width="match_parent"
                 android:layout_height="150dp"
@@ -37,71 +37,70 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <com.lylc.widget.circularprogressbar.CircularProgressBar
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:orientation="vertical">
+
+                            <ImageView
+                                android:id="@+id/smallheart"
+                                android:layout_width="30dp"
+                                android:layout_centerHorizontal="true"
+                                android:layout_height="30dp"
+                                android:layout_marginTop="20dp"
+                                android:background="@drawable/shock" />
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:id="@+id/shockwhite"
+                                android:layout_marginTop="20dp"
+                                android:background="#FFFFFF"
+                                android:layout_centerHorizontal="true"/>
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:id="@+id/shockwhite2"
+                                android:layout_marginTop="20dp"
+                                android:background="#FFFFFF"
+                                android:layout_centerHorizontal="true"/>
+
+                            <TextView
+                                android:id="@+id/HeartDataValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerHorizontal="true"
+                                android:layout_below="@+id/smallheart"
+                                android:text="-"
+                                android:textColor="#000000"
+                                android:textSize="40dp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/DataIndex"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerHorizontal="true"
+                                android:layout_below="@+id/HeartDataValue"
+                                android:text="BPM"
+                                android:textColor="#000000"
+                                android:textSize="15dp"
+                                android:textStyle="bold" />
+
+                        </RelativeLayout>
+
+                        <ImageView
                             android:id="@+id/heartseekbar"
-                            style="@style/Widget.ProgressBar.CircularProgressBar"
                             android:layout_width="140dp"
                             android:layout_height="140dp"
                             android:layout_gravity="center_horizontal|center_vertical"
-                            circular:cpb_backgroundColor="#ffa5a5"
-                            circular:cpb_progressColor="#ff442c" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:orientation="vertical">
-
-                                <ImageView
-                                    android:id="@+id/smallheart"
-                                    android:layout_width="30dp"
-                                    android:layout_gravity ="center"
-                                    android:layout_height="30dp"
-                                    circular:srcCompat="@drawable/heartimage" />
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:gravity="center"
-                                    android:orientation="horizontal">
-
-                                    <TextView
-                                        android:id="@+id/HeartDataValue"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_gravity="top"
-                                        android:layout_weight="0"
-                                        android:gravity="top"
-                                        android:text="-"
-                                        android:textColor="#000000"
-                                        android:textSize="40dp"
-                                        android:textStyle="bold" />
-                                </LinearLayout>
-
-                                <TextView
-                                    android:id="@+id/DataIndex"
-                                    android:layout_width="80dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center"
-                                    android:gravity="center"
-                                    android:text="BPM"
-                                    android:textColor="#000000"
-                                    android:textSize="15dp"
-                                    android:textStyle="bold" />
-
-                            </LinearLayout>
-
-                        </LinearLayout>
+                            android:src="@drawable/oval_shape"/>
 
                     </FrameLayout>
 
-            </LinearLayout>
+            </RelativeLayout>
 
             <LinearLayout
                 android:id="@+id/tab_content2"

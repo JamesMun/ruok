@@ -20,11 +20,6 @@
             android:textColor="#000000"
             android:text="최소 심박수"/>
 
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#bdbdbd"/>
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="60dp"
@@ -37,11 +32,6 @@
             android:text="최대 심박수"/>
 
     </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#bdbdbd"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -58,12 +48,6 @@
             android:layout_weight="1"
             android:gravity="center"
             android:textSize="16dp"/>
-
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#bdbdbd"/>
-
         <EditText
             android:id="@+id/maxheartrate"
             android:layout_width="match_parent"
@@ -98,11 +82,6 @@
             android:textSize="16dp"
             android:background="#ffffff"/>
 
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="#bdbdbd" />
-
         <Button
             android:id="@+id/cancelButton"
             android:layout_width="match_parent"
@@ -114,9 +93,4 @@
             android:textSize="16dp"
             android:background="#ffffff"/>
     </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#bdbdbd"/>
 </LinearLayout>

@@ -95,7 +95,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     private Thread heartThread, thread;
 
-    public static CircularProgressBar heart_seekbar;
+    //public static CircularProgressBar heart_seekbar;
 
     MainActivity mainclass = new MainActivity();
 
@@ -135,13 +135,26 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
         HeartRateText = (TextView) view.findViewById(R.id.HeartDataValue);
         mChart = (LineChart) view.findViewById(R.id.chart);
-        heart_seekbar = (CircularProgressBar) view.findViewById(R.id.heartseekbar);
+        //heart_seekbar = (CircularProgressBar) view.findViewById(R.id.heartseekbar);
 
-        Heart = (ImageView) view.findViewById(R.id.smallheart);
+        /*Heart = (ImageView) view.findViewById(R.id.smallheart);
 
         animation = AnimationUtils.loadAnimation(getContext(), R.anim.wave);
         animation.setRepeatCount(Animation.INFINITE);
-        Heart.startAnimation(animation);
+        Heart.startAnimation(animation);*/
+
+        ImageView imageView = (ImageView) view.findViewById(R.id.shockwhite);
+        ImageView imageView2 = (ImageView) view.findViewById(R.id.shockwhite2);
+
+        Animation animation = AnimationUtils.loadAnimation(MainActivity.UserActContext, R.anim.move);
+        animation.setRepeatCount(Animation.INFINITE);
+        animation.setDuration(1500);
+
+        Animation animation2 = AnimationUtils.loadAnimation(MainActivity.UserActContext, R.anim.move2);
+        animation2.setRepeatCount(Animation.INFINITE);
+
+        imageView.startAnimation(animation);
+        imageView2.startAnimation(animation2);
 
         chart_setting();
 
@@ -343,7 +356,7 @@ public class Fragment_TabMain extends Fragment implements View.OnClickListener, 
 
     android.os.Handler receivehearthandler = new android.os.Handler() {
         public void handleMessage(Message msg) {
-            seekani(heart_seekbar, Integer.parseInt(String.valueOf(Math.round(heart_start * 0.7))), Integer.parseInt(String.valueOf(Math.round(sHeartDTO.getHeartRate() * 0.7))));
+            //seekani(heart_seekbar, Integer.parseInt(String.valueOf(Math.round(heart_start * 0.7))), Integer.parseInt(String.valueOf(Math.round(sHeartDTO.getHeartRate() * 0.7))));
 
             //animation.setDuration((20 - sHeartDTO.getHeartRate() / 5) * 80);
 

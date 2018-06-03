@@ -2,19 +2,12 @@ package com.example.mun.ruok.Activity;
 
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Handler;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
@@ -26,6 +19,7 @@ import android.util.Log;
 import android.widget.Toast;
 import android.Manifest;
 
+import com.example.mun.ruok.Fragment.AlarmFragment;
 import com.example.mun.ruok.Fragment.Fragment_TabMain;
 import com.example.mun.ruok.Fragment.HistoryFragment;
 import com.example.mun.ruok.Fragment.SettingFragment;
@@ -49,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private Fragment tabFragment;
     private Fragment settingFragment;
     private Fragment historyFragment;
+    private Fragment alarmFragment;
 
     public static MainActivity UserActContext;
     public static Activity UserActivity;
@@ -188,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        //super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
             //블루투스 장치를 켜기위한 요청코드인 경우
             case REQUEST_ENABLE_BT:
@@ -218,16 +213,9 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 break;
+
         }
     }
-
-    /*@Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if(hasFocus) {
-            checkGPSService();
-        }
-    }*/
 
     public void startRUOK() {
         if(!isServiceRunning()) {   // 서비스가 켜져있지 않은 경우
@@ -242,17 +230,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public boolean checkGPSService() {
-        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if(!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            /*Intent intent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            intent.addCategory(Intent.CATEGORY_DEFAULT);
-            startActivity(intent);*/
-            return false;
-        } else {
-            return true;
-        }
-    }
     public void stopSensorService() {   // 서비스 중지
         Intent intent = new Intent(this, SensorService.class);
         stopService(intent);
@@ -270,6 +247,7 @@ public class MainActivity extends AppCompatActivity {
         tabFragment = new Fragment_TabMain();
         settingFragment = new SettingFragment();
         historyFragment = new HistoryFragment();
+        alarmFragment = new AlarmFragment();
 
         android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
@@ -295,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
                 } else if(position == 1) {
                     selected = historyFragment; // 두번째 탭 선택시 히스토리 프래그먼트
                 } else if(position == 2) {
-                    selected = settingFragment; // 세번째 탭 선택시 알람 프래그먼트
+                    selected = alarmFragment; // 세번째 탭 선택시 알람 프래그먼트
                 } else if(position == 3) {
                     selected = settingFragment; // 네번재 탭 선택시 셋팅 프래그먼트
                 }
