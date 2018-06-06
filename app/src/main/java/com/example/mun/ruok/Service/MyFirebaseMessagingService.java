@@ -8,6 +8,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Switch;
 
 import com.example.mun.ruok.Activity.AlertActivity;
 import com.example.mun.ruok.Activity.MainActivity;
@@ -16,6 +17,8 @@ import com.example.mun.ruok.R;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.RemoteMessage;
+
+import static com.example.mun.ruok.Service.SensorService.sConnData;
 
 public class MyFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
     private static final String TAG = MyFirebaseMessagingService.class.getSimpleName();
@@ -34,20 +37,44 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
     public void onMessageReceived(RemoteMessage remoteMessage) {
         Log.i(TAG, "onMessageReceived");
 
-        //String title = remoteMessage.getNotification().getTitle();
-        int CONNECTING_CODE = Integer.valueOf(remoteMessage.getNotification().getBody());
-        String from = remoteMessage.getNotification().getTag();
+        if(remoteMessage.getData().size() > 0) {
+            int CONNECTING_CODE = Integer.valueOf(remoteMessage.getData().get("body"));
+            String from = remoteMessage.getData().get("tag");
 
-        if(CONNECTING_CODE == REQUEST_CONNECTING_CODE) {
-            sendNotification("연결 요청",from + "님이 연결을 요청하셨습니다.");
-        } else if(CONNECTING_CODE == CONNECTING_PERMISSION_CODE) {
-            sendNotification("연결 승인",from + "님이 연결을 승인하셨습니다.");
-        } else if(CONNECTING_CODE == DEFAULT_CODE) {
-            sendNotification("연결 해제",from + "님이 연결을 해제하셨습니다.");
-        } else if(CONNECTING_CODE == EMERGENCY_CODE) {
-            sendNotification("위험 알림", from + "님의 상태가 위험합니다.");
-            Intent intent = new Intent(getApplicationContext(), AlertActivity.class);
-            startActivity(intent);
+            switch(CONNECTING_CODE) {
+                case REQUEST_CONNECTING_CODE :
+                    sendNotification("연결 요청", from + "님이 연결을 요청하셨습니다.");
+                    //sConnData.setConnection(from, REQUEST_CONNECTING_CODE);
+                    break;
+                case CONNECTING_PERMISSION_CODE :
+                    sendNotification("연결 승인", from + "님이 연결을 승인하셨습니다.");
+                    //sConnData.setConnection(from, CONNECTING_PERMISSION_CODE);
+                    break;
+                case DEFAULT_CODE :
+                    sendNotification("연결 해제", from + "님이 연결을 해제하셨습니다.");
+                    //sConnData.setConnection("연결 해제", DEFAULT_CODE);
+                    break;
+                case EMERGENCY_CODE :
+                    sendNotification("위험 알림", from + "님의 상태가 위험합니다.");
+                    Intent intent = new Intent(getApplicationContext(), AlertActivity.class);
+                    startActivity(intent);
+                    break;
+            }
+
+            /*if (CONNECTING_CODE == REQUEST_CONNECTING_CODE) {
+                sendNotification("연결 요청", from + "님이 연결을 요청하셨습니다.");
+                //sConnData.setConnection(from, REQUEST_CONNECTING_CODE);
+            } else if (CONNECTING_CODE == CONNECTING_PERMISSION_CODE) {
+                sendNotification("연결 승인", from + "님이 연결을 승인하셨습니다.");
+                //sConnData.setConnection(from, CONNECTING_PERMISSION_CODE);
+            } else if (CONNECTING_CODE == DEFAULT_CODE) {
+                sendNotification("연결 해제", from + "님이 연결을 해제하셨습니다.");
+                //sConnData.setConnection("연결 해제", DEFAULT_CODE);
+            } else if (CONNECTING_CODE == EMERGENCY_CODE) {
+                sendNotification("위험 알림", from + "님의 상태가 위험합니다.");
+                Intent intent = new Intent(getApplicationContext(), AlertActivity.class);
+                startActivity(intent);
+            }*/
         }
     }
 

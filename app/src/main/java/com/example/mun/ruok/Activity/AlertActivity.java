@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 
 import com.example.mun.ruok.DTO.ConnectDTO;
@@ -56,7 +57,10 @@ public class AlertActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alert);
 
-        Log.d(TAG, "AlertAcitivity.onCreate");
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
 
         vib = (Vibrator)getSystemService(VIBRATOR_SERVICE);
         vib.vibrate(new long[]{0,1000}, 0);
@@ -81,10 +85,10 @@ public class AlertActivity extends AppCompatActivity{
         super.onDestroy();
         if(sUserData.getUserType()) {
             timer.cancel();
+            sAlert = false;
+            sHeart_Count = 0;
         }
         vib.cancel();
-        sAlert = false;
-        sHeart_Count = 0;
     }
 
     public static void timerStart() {
@@ -120,11 +124,11 @@ public class AlertActivity extends AppCompatActivity{
                                 try {
                                     // FMC 메시지 생성 start
                                     JSONObject root = new JSONObject();
-                                    JSONObject notification = new JSONObject();
-                                    notification.put("title", "Connecting Code");
-                                    notification.put("body",CODE);
-                                    notification.put("tag",sAccount);
-                                    root.put("notification", notification);
+                                    JSONObject data = new JSONObject();
+                                    data.put("title", "Connecting Code");
+                                    data.put("body",CODE);
+                                    data.put("tag",sAccount);
+                                    root.put("notification", data);
                                     root.put("to", userData.getFcmToken());
                                     // FMC 메시지 생성 end
 

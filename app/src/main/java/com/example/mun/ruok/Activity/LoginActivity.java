@@ -45,14 +45,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     private static final int DEFAULT_CODE = 0;
 
-    GoogleSignInAccount userAccount;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        init();
+        init(); // 초기화 함수
     }
 
     //초기화 함수
@@ -60,7 +58,6 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         // Button listeners
         findViewById(R.id.sign_in_button).setOnClickListener(this);
-
 
         // Configure sign-in to request the user's ID, email address, and basic
         // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
@@ -87,15 +84,15 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         //이미 구글 로그인이 된(이 앱에 로그인 된) 상태
         if (account != null) {
 
-            String email = account.getEmail();
+            String email = account.getEmail().substring(0,account.getEmail().indexOf('@'));  // 로그인 한 이메일 주소에서 계정만을 가져온다.
 
-            databaseReference.child("Users").child(email.substring(0, email.indexOf('@'))).child("fcmToken").setValue(FirebaseInstanceId.getInstance().getToken());
+            databaseReference.child("Users").child(email).child("fcmToken").setValue(FirebaseInstanceId.getInstance().getToken()); // 구글 계정 토큰을 가져온다. (계정간 메시지를 보낼때 필요)
 
-            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-            intent.putExtra("account", email.substring(0, email.indexOf('@')));
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);    // 메인 액티비티로 이동하기 위해 인텐트 생성
+            intent.putExtra("account", email);  // 계정 값을 넘기기 위해 account 라는 이름으로 email 포함
 
-            startActivity(intent);
-            finish();
+            startActivity(intent);  // 액티비티 실행
+            finish();   // 로그인 액티비티 종료
 
         } else {//로그인이 되지 않았으니, 로그인을 받아야 한다.
 
@@ -122,13 +119,13 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
 
-            String email = account.getEmail();
+            String email = account.getEmail().substring(0,account.getEmail().indexOf('@'));
 
-            checkUserType();
-            makeDBonFirebase(account);
+            checkUserType();        // 사용자인지 보호자인지 확인
+            makeDBonFirebase(email);  // 계정 관련 디비 생성
 
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-            intent.putExtra("account", email.substring(0, email.indexOf('@')));
+            intent.putExtra("account", email);
 
             startActivity(intent);
             finish();
@@ -150,47 +147,31 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
     // [END signIn]
 
-    // [START revokeAccess]
-
-    //로그인 된 사용자의 개인정보 확인.
-    //메일, 이름, 나이, 성별 확인 필요.
-    private void profile() {
-        String email = userAccount.getEmail();
-        String id = userAccount.getId();
-        String familyname = userAccount.getFamilyName();
-        String givenname = userAccount.getGivenName();
-
-        Toast.makeText(getApplicationContext(), "email : " + email + "\nid = " + id + "\nfamilyname = " + familyname + "\ngivenname = " + givenname, Toast.LENGTH_SHORT).show();
-
-    }
-
-    private void makeDBonFirebase(GoogleSignInAccount account) {
-        final String email = account.getEmail().substring(0,account.getEmail().indexOf('@'));
-
+    private void makeDBonFirebase(final String email) {
         databaseReference.child("Users").child(email).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
-                UserDTO userDTO = dataSnapshot.getValue(UserDTO.class);
+                UserDTO userDTO = dataSnapshot.getValue(UserDTO.class); // 디비에 생성되어 있는 유저 데이터를 불러온다.
 
-                if(userDTO == null) {
+                if(userDTO == null) {   // 유저 데이터 값이 없다면 디비에 유저 데이터 값 생성
 
-                    if(UserType) {
+                    if(UserType) {  // 사용자 일때
                         UserDTO userData = new UserDTO();
                         userData.setUserData(email, FirebaseInstanceId.getInstance().getToken(), 120, 60, UserType);
                         databaseReference.child("Users").child(email).setValue(userData);
 
                         FitDTO fitDTO = new FitDTO();
-                        fitDTO.setFitData(2,0,60,140);
+                        fitDTO.setFitData(2,0,140,60);
                         databaseReference.child("Fitness").child(email).setValue(fitDTO);
-                    } else if(!UserType) {
+                    } else if(!UserType) {  // 보호자 일때
                         GuardianDTO guardianData = new GuardianDTO();
                         guardianData.setGuardianData(email, FirebaseInstanceId.getInstance().getToken(), UserType);
                         databaseReference.child("Users").child(email).setValue(guardianData);
                     }
 
                     ConnectDTO connectDTO = new ConnectDTO();
-                    connectDTO.setConnection("연결 해제", DEFAULT_CODE);
+                    connectDTO.setConnection("연결 해제", DEFAULT_CODE);    // 맨 처음 생성시 연결 상태 없음
 
                     databaseReference.child("Connection").child(email).setValue(connectDTO);
                 }
@@ -206,8 +187,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.sign_in_button:
-                signIn();
+            case R.id.sign_in_button:   // 로그인 버튼 선택시
+                signIn();   // signIn 함수 실행
                 break;
         }
     }

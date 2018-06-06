@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bottom);
 
-        tabMake();
+        makeTabs();
         getUserInfo();
 
         UserActContext = this;
@@ -185,6 +185,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
+            // Check for the integer request code originally supplied to startResolutionForResult().
+            case REQUEST_CHECK_SETTINGS:    // GPS 설정 ON OFF 확인
+                switch (resultCode) {
+                    case RESULT_OK:
+                        Log.e("Settings", "Result OK");
+                        checkBluetooth();   // 블루투스 확인
+                        break;
+                    case RESULT_CANCELED:
+                        Log.e("Settings", "Result Cancel");
+                        checkBluetooth();   // 블루투스 확인
+                        break;
+                }
+                break;
+
             //블루투스 장치를 켜기위한 요청코드인 경우
             case REQUEST_ENABLE_BT:
                 //장치 켜짐의 여부에 따라 토스트 메세지 출력
@@ -197,20 +211,6 @@ public class MainActivity extends AppCompatActivity {
                     if(isServiceRunning()) {
                         stopSensorService();
                     }
-                }
-                break;
-
-            // Check for the integer request code originally supplied to startResolutionForResult().
-            case REQUEST_CHECK_SETTINGS:
-                switch (resultCode) {
-                    case RESULT_OK:
-                        Log.e("Settings", "Result OK");
-                        //startLocationUpdates();
-                        checkBluetooth();
-                        break;
-                    case RESULT_CANCELED:
-                        Log.e("Settings", "Result Cancel");
-                        break;
                 }
                 break;
 
@@ -242,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
         //Toast.makeText(this, account, Toast.LENGTH_SHORT).show();
     }
 
-    private void tabMake() {    // 메인 액티비티에 사용되는 탭 생성
+    private void makeTabs() {    // 메인 액티비티에 사용되는 탭 생성
 
         tabFragment = new Fragment_TabMain();
         settingFragment = new SettingFragment();
@@ -254,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
         ft.replace(R.id.content_fragment_layout, tabFragment);  // 맨 처음 시작시 실행되는 프래그먼트 지정
         ft.commit();
 
-        TabLayout tabs = (TabLayout) findViewById(R.id.tabs);
+        TabLayout tabs = (TabLayout) findViewById(R.id.tabs);   // 탭 레이아웃 생성
 
         tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_home));   // 각 탭에 해당하는 아이콘 지정
         tabs.addTab(tabs.newTab().setIcon(R.drawable.icon_history));
@@ -268,20 +268,26 @@ public class MainActivity extends AppCompatActivity {
                 int position = tab.getPosition();   // 선택된 탭 포지션 확인
 
                 Fragment selected = null;
-                if(position == 0) {
-                    selected = tabFragment; // 첫번째 탭 선택시 메인 프래그먼트
-                } else if(position == 1) {
-                    selected = historyFragment; // 두번째 탭 선택시 히스토리 프래그먼트
-                } else if(position == 2) {
-                    selected = alarmFragment; // 세번째 탭 선택시 알람 프래그먼트
-                } else if(position == 3) {
-                    selected = settingFragment; // 네번재 탭 선택시 셋팅 프래그먼트
+
+                switch (position) {
+                    case 0 :    // 첫번째 탭 선택 시 메인 프래그먼트로 이동
+                        selected = tabFragment;
+                        break;
+                    case 1:     // 두번째 탭 선택시 히스토리 프래그먼트로 이동
+                        selected = historyFragment;
+                        break;
+                    case 2:     // 세번째 탭 선택시 알람 프래그먼트로 이동
+                        selected = alarmFragment;
+                        break;
+                    case 3:     // 네번재 탭 선택시 셋팅 프래그먼트로 이동
+                        selected = settingFragment;
+                        break;
                 }
 
                 android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction(); // 프래그먼트 트랜잭션 실행
 
-                ft.replace(R.id.content_fragment_layout, selected); // 선택된 프래그먼트 실행
-                ft.commit();
+                ft.replace(R.id.content_fragment_layout, selected); // 선택된 프래그먼트 이동
+                ft.commit();    // 실행
             }
 
             @Override
@@ -296,8 +302,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public boolean isServiceRunning()
-    {
+    public boolean isServiceRunning() {      // 서비스가 실행 중인지 확인
         ActivityManager manager = (ActivityManager) this.getSystemService(Activity.ACTIVITY_SERVICE);   // 현재 액티비티에서 실행되어있는 모든 서비스 목록 저장
 
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE))    // 실행된 서비스의 수만큼 반복
